@@ -404,7 +404,7 @@
           }
           if (st.inter != null) {
             const d = t - st.inter, f = ease(seg(d, 0, 0.8));
-            P.gradCap(x, lerp(300, y - 380 * s, f), -0.15);
+            P.gradCap(x + 4 * s, lerp(300, y - 432 * s, f), -0.12, s * 0.85);
           }
         } }
       ];
@@ -659,7 +659,7 @@
           ctx.save(); ctx.translate(540, 330); ctx.scale(s, s); ctx.rotate(Math.sin(t * 3) * 0.03);
           text('¡Feliz', 0, -70, { size: 120, color: COL.pink, outline: COL.darkred, outlineW: 16, font: C.FONT_TITLE });
           text('cumpleaños,', 0, 60, { size: 110, color: COL.yellow, outline: COL.darkred, outlineW: 16, font: C.FONT_TITLE });
-          text(K.nombre + '!', 0, 210, { size: 150, color: COL.blue, outline: COL.navy, outlineW: 16, font: C.FONT_TITLE });
+          text((K.apodo || K.nombre) + '!', 0, 210, { size: 150, color: COL.blue, outline: COL.navy, outlineW: 16, font: C.FONT_TITLE });
           ctx.restore();
         }
         narrate(ch.despues, t, st.done + 0.8);

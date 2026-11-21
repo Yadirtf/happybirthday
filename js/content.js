@@ -4,6 +4,7 @@
    ========================================================== */
 window.CONTENT = {
   nombre: 'Dayana',
+  apodo: 'Gordis', // apodo de cariño para el final del pastel
   edad: 25,
 
   portada: {
@@ -37,7 +38,7 @@ window.CONTENT = {
     cole: {
       titulo: 'Ingrediente 3 · Un año de cole compartido',
       pista: 'toca la campana',
-      texto: 'Un año entero bajo el mismo techo y en el mismo cole: mismo camino, mismas tareas y los mismos chismes de regreso a casa.'
+      texto: 'Un año entero bajo el mismo techo y en el mismo cole: tú en once, yo en noveno y Tati en quinto, pero los tres cargados de tareas pa\' la casa y con los mismos chismes de regreso.'
     },
     moto: {
       titulo: 'Ingrediente 4 · Una pizca de motera',
@@ -89,14 +90,14 @@ window.CONTENT = {
       titulo: '¡Al horno durante 25 años!',
       pista: 'pide un deseo y toca las velitas',
       texto: 'Listo el pastel. Ahora cierra los ojos, pide un deseo bien grande y sopla las velitas.',
-      despues: '¡Feliz cumpleaños, Dayana!'
+      despues: '¡Feliz cumpleaños, Gordis! Te quiero muchísimo.'
     }
   },
 
   carta: {
     titulo: 'Nota del chef:',
     texto:
-      'Querida Dayana, feliz cumpleaños 25. Esta receta lleva años cocinándose y créeme que salió muy bien (aunque Tati todavía nos cobra los chantajes).\n' +
+      '¡Feliz cumpleaños, hermanita! Esta receta lleva años cocinándose y créeme que salió muy bien (aunque Tati todavía nos cobra los chantajes).\n' +
       'Te he visto ser prima, hermana, alumna de moto, mamá de Danielito y ahora psicóloga. Sé que no fue fácil, y estoy muy orgulloso de ti.\n' +
       'Gracias por abrirme siempre la puerta, por las risas y por decirme que sí cada vez que llueve.\n' +
       'Que estos 25 vengan llenos de salud, de logros y de muchos más momentos juntos. Te quiero muchísimo.',
