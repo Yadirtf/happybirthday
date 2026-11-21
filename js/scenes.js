@@ -1,14 +1,17 @@
 /* ==========================================================
-   scenes.js — las páginas del libro
-   Cada escena: { dur(st), draw(t, st, live), tap(x, y, t, st, fx), auto(t, st, fx), hold }
+   scenes.js — "Receta secreta: cómo se hace una Dayana"
+   Cada escena: { dur(st), draw(t, st, live), tap(x, y, t, st, fx), auto(t, st, fx), hold, ready(st) }
    - dur: segundos que dura la animación de entrada
    - tap: interacción (devuelve true si la consumió)
    - auto: lo que pasa solo cuando se graba el video
+   En cada ingrediente, después de la interacción, los muñequitos
+   saltan a la olla con un "¡plop!".
    ========================================================== */
 (function () {
-  const C = Crayon, P = Props, COL = C.COL, K = window.CONTENT;
-  const { seg, ease, back, text, paragraph, line, shape, ellipse, rect } = C;
+  const C = Crayon, P = Props, COL = C.COL, K = window.CONTENT, PG = K.paginas;
+  const { seg, ease, back, text, paragraph, line, shape, ellipse, rect, clamp } = C;
   const CPS = 30; // letras por segundo del narrador
+  const lerp = (a, b, k) => a + (b - a) * k;
 
   const IMG = {};
   function loadImages() {
@@ -20,28 +23,114 @@
     })));
   }
 
+  /* ---------- los muñequitos ---------- */
+  const DAYANA = { hair: 'long', hairColor: '#e2b862', skin: '#fbe3cf', shirt: COL.pink, pants: COL.purple };
+  const TATI = { hair: 'long', hairColor: '#1f1a17', skin: '#d6a06b', shirt: COL.green, pants: COL.navy };
+  const YADIR = { hair: 'short', hairColor: '#1f1a17', skin: '#c98d5b', shirt: COL.red, pants: COL.blue };
+  const TIA = { hair: 'medium', hairColor: '#1f1a17', skin: '#e6b88c', shirt: '#2a9d8f', pants: COL.brown, apron: true };
+  const DANI = { hair: 'short', hairColor: '#9a6a3a', skin: '#f6d6bb', shirt: COL.blue, pants: COL.navy };
+  const ASLEI = { hair: 'pigtails', hairColor: '#1f1a17', skin: '#e6b88c', shirt: COL.yellow, pants: COL.pink };
+  const as = (base, extra) => Object.assign({}, base, extra);
+
   /* ---------- piezas comunes ---------- */
   function header(title, t) {
+    const parts = title.split(' · ');
+    const kicker = parts.length > 1 ? parts[0] : null, main = parts.length > 1 ? parts[1] : parts[0];
     const p = ease(seg(t, 0, 0.8));
-    text(title, 540, 150, { size: 66, color: COL.navy, count: Math.ceil(title.length * p) });
-    const w = C.measure(title, 66) / 2 + 20;
-    line([[540 - w, 182], [540 + w, 176]], COL.pink, 8, { p: seg(t, 0.4, 1.0) });
+    if (kicker) text(kicker, 540, 118, { size: 46, color: COL.pink, count: Math.ceil(kicker.length * p * 1.5) });
+    let size = 64;
+    const w0 = C.measure(main, size);
+    if (w0 > 960) size = Math.floor(size * 960 / w0);
+    const y = kicker ? 196 : 160;
+    text(main, 540, y, { size, color: COL.navy, count: Math.ceil(main.length * p) });
+    const w = Math.min(480, C.measure(main, size) / 2 + 20);
+    line([[540 - w, y + 30], [540 + w, y + 24]], COL.orange, 7, { p: seg(t, 0.4, 1.0) });
   }
   function hint(str, t, live, show) {
-    if (!live || !show) return;
-    const a = 0.55 + Math.sin(t * 4) * 0.35;
-    const ctx = C.ctx; ctx.save(); ctx.globalAlpha = a;
-    text('( ' + str + ' )', 540, 245, { size: 40, color: COL.purple });
+    if (!live || !show || t < 1) return;
+    const ctx = C.ctx; ctx.save(); ctx.globalAlpha = 0.55 + Math.sin(t * 4) * 0.35;
+    text('( ' + str + ' )', 540, 290, { size: 40, color: COL.purple });
     ctx.restore();
   }
   function narrate(str, t, start) {
     const n = Math.max(0, (t - start) * CPS);
     if (n <= 0) return;
-    shape(rect(70, 1470, 940, 360), COL.white, null, 0, { alpha: 0.55, gap: 18 });
-    line(rect(70, 1470, 940, 360), COL.orange, 5, { p: seg(t, start - 0.2, start + 0.5) });
-    paragraph(str, 540, 1555, 860, { size: 50, lh: 66, count: n, color: COL.black });
+    shape(rect(60, 1480, 960, 350), COL.white, null, 0, { alpha: 0.6, gap: 18 });
+    line(rect(60, 1480, 960, 350), COL.orange, 5, { p: seg(t, start - 0.2, start + 0.5) });
+    paragraph(str, 540, 1560, 880, { size: 47, lh: 62, count: n, color: COL.black });
   }
   const textTime = (s) => s.length / CPS;
+
+  /* ---------- la olla y el salto de los muñequitos ---------- */
+  const POT = { x: 920, y: 1415, s: 0.72 };
+  const HOP = 0.7, STAG = 0.16;
+  function hopState(st, t, i) {
+    if (st.pot == null) return 0;
+    return seg(t, st.pot + i * STAG, st.pot + i * STAG + HOP);
+  }
+  function hopXY(x, y, s, k) {
+    if (k <= 0) return [x, y, s];
+    return [lerp(x, POT.x, k), lerp(y, POT.y - 110, k) - Math.sin(k * Math.PI) * 380, s * (1 - k * 0.8)];
+  }
+  function drawCast(cast, t, st) {
+    cast.forEach((c, i) => {
+      const k = hopState(st, t, i);
+      if (k >= 1) return;
+      const [x, y, s] = hopXY(c.x, c.y, c.s, k);
+      const ctx = C.ctx;
+      if (k > 0) { ctx.save(); ctx.translate(x, y - 150 * s); ctx.rotate(k * 5); ctx.translate(-x, -(y - 150 * s)); }
+      if (c.draw) c.draw(x, y, s, k);
+      else P.person(x, y, s, Object.assign({ t: t + i }, c.o, k > 0 ? { walk: 0, jump: 0, wave: false, mouth: 'o' } : {}));
+      if (k > 0) ctx.restore();
+    });
+  }
+  function drawPot(t, st, n, idx) {
+    const end = st.pot == null ? Infinity : st.pot + (n - 1) * STAG + HOP;
+    const splash = st.pot == null ? 0 : seg(t, end - 0.15, end + 0.9);
+    P.pot(POT.x, POT.y, POT.s, t, { splash, label: String(idx) });
+  }
+
+  /* Fábrica de páginas-ingrediente */
+  function ingredient(cfg) {
+    const k = cfg.k;
+    return {
+      hold: cfg.hold || 5,
+      dur: () => 1.4 + textTime(k.texto),
+      ready: (st) => st.pot != null,
+      draw(t, st, live) {
+        if (st.inter != null && st.pot == null && t > st.inter + (cfg.potDelay || 2.4)) { st.pot = t; Sound.fx.boing(); }
+        if (st.pot != null && !st.plopped && t > st.pot + HOP + 0.2) { st.plopped = true; Sound.fx.pop(); }
+        cfg.bg(t, st);
+        const cast = cfg.cast(t, st);
+        drawCast(cast, t, st);
+        if (cfg.fg) cfg.fg(t, st);
+        drawPot(t, st, cast.length, cfg.n);
+        header(k.titulo, t);
+        hint(k.pista, t, live, st.inter == null);
+        if (live && st.inter != null && st.pot == null && t > st.inter + 1.2) {
+          const ctx = C.ctx; ctx.save(); ctx.globalAlpha = 0.6 + Math.sin(t * 6) * 0.4;
+          text('¡a la olla!', POT.x - 20, POT.y - 210, { size: 44, color: COL.red });
+          ctx.restore();
+        }
+        narrate(k.texto, t, 1.1);
+      },
+      tap(x, y, t, st, fx) {
+        if (st.inter != null && st.pot == null && Math.hypot(x - POT.x, y - (POT.y - 80)) < 160) { st.pot = t; fx.boing(); return true; }
+        if (st.inter == null && cfg.hit(x, y, t, st)) { st.inter = t; if (cfg.onInter) cfg.onInter(fx, st, t); return true; }
+        return false;
+      },
+      auto(t, st, fx) {
+        if (st.inter == null && t > this.dur() - 1.0) { st.inter = t; if (cfg.onInter) cfg.onInter(fx, st, t); }
+      }
+    };
+  }
+  const near = (x, y, cx, cy, r) => Math.hypot(x - cx, y - cy) < r;
+  function sceneBase(t, o = {}) {
+    P.sky(t, { color: o.sky || COL.sky, h: 1300 });
+    if (o.sun !== false) P.sun(o.sunX || 140, 420, 56, t);
+    if (o.cloud !== false) P.cloud((o.cloudX || 820) + Math.sin(t * 0.3) * 30, 420, 0.75);
+    P.ground(o.ground || 1240, o.groundColor || COL.green, ease(seg(t, 0, 0.5)));
+  }
 
   /* ======================= PORTADA ======================= */
   const portada = {
@@ -52,37 +141,42 @@
       const ctx = C.ctx;
       ctx.save();
       ctx.translate(540 - open * 300, 960); ctx.scale(1 - open * 0.15, 1); ctx.translate(-540, -960);
-      // tapa del libro
-      shape(rect(110, 230, 860, 1460), COL.pink, null, 0, { gap: 15, alpha: 0.75 });
-      line(rect(110, 230, 860, 1460), COL.darkred, 9, { p: seg(t, 0, 1) });
-      line([[150, 230], [150, 1690]], Props.shade(COL.pink), 10, { p: seg(t, 0.3, 1) });
-      line(rect(170, 290, 750, 1340), COL.white, 5, { p: seg(t, 0.6, 1.6), alpha: 0.8 });
-
-      text(K.portada.arriba, 545, 520, { size: 80, color: COL.white, outline: COL.darkred, count: Math.ceil(K.portada.arriba.length * seg(t, 0.8, 1.4)) });
-      const s = back(seg(t, 1.2, 1.9));
+      // tapa del recetario
+      shape(rect(110, 200, 860, 1500), '#f28b5b', null, 0, { gap: 15, alpha: 0.75 });
+      line(rect(110, 200, 860, 1500), COL.darkbrown, 9, { p: seg(t, 0, 1) });
+      line([[150, 200], [150, 1700]], P.shade('#f28b5b'), 10, { p: seg(t, 0.3, 1) });
+      // manteles a cuadros
+      for (let i = 0; i < 7; i++) shape(rect(170 + i * 110, 1590, 55, 55), COL.white, null, 0, { alpha: 0.6 });
+      // manchitas de chocolate
+      shape(ellipse(820, 330, 46, 34), COL.darkbrown, null, 0, { alpha: 0.45 });
+      shape(ellipse(870, 380, 14, 12), COL.darkbrown, null, 0, { alpha: 0.45 });
+      text(K.portada.arriba, 545, 400, { size: 96, color: COL.cream, outline: COL.darkbrown, count: Math.ceil(K.portada.arriba.length * seg(t, 0.6, 1.3)), font: C.FONT_TITLE });
+      text(K.portada.medio, 545, 520, { size: 64, color: COL.white, outline: COL.darkbrown, outlineW: 8, count: Math.ceil(K.portada.medio.length * seg(t, 1.0, 1.5)) });
+      const s = back(seg(t, 1.3, 2.0));
       if (s > 0) {
-        ctx.save(); ctx.translate(545, 690); ctx.scale(s, s);
+        ctx.save(); ctx.translate(545, 700); ctx.scale(s, s);
         text(K.nombre, 0, 0, { size: 190, color: COL.yellow, outline: COL.darkred, outlineW: 26, font: C.FONT_TITLE });
         ctx.restore();
       }
-      // estrella con 25
-      const sp = back(seg(t, 1.8, 2.5));
-      if (sp > 0) {
-        ctx.save(); ctx.translate(545, 1060); ctx.scale(sp, sp); ctx.rotate(Math.sin(t * 2) * 0.05);
-        P.star(0, 0, 230, COL.yellow);
-        text(String(K.edad), 0, 70, { size: 200, color: COL.red, outline: COL.white, outlineW: 14, font: C.FONT_TITLE });
+      // la olla con los tres asomados
+      const pp = back(seg(t, 1.8, 2.5));
+      if (pp > 0) {
+        ctx.save(); ctx.translate(545, 1190); ctx.scale(pp, pp); ctx.translate(-545, -1190);
+        [[as(TATI, {}), 440], [as(DAYANA, {}), 545], [as(YADIR, {}), 650]].forEach(([o, x], i) => {
+          P.person(x, 1220 + Math.abs(Math.sin(t * 3 + i)) * -16, 0.42, Object.assign({ t: t + i, wave: i === 1 }, o));
+        });
+        P.pot(545, 1330, 1.5, t, {});
         ctx.restore();
       }
-      const bl = seg(t, 2.2, 3);
-      if (bl > 0) {
-        P.balloon(260, 1290 - 40 * ease(bl), COL.blue, t, 0.9);
-        P.balloon(830, 1250 - 40 * ease(bl), COL.purple, t + 1, 0.9);
-        P.heart(270, 420, 3.2, COL.red);
-        P.heart(830, 420, 2.6, COL.yellow);
-        P.star(820, 880, 34, COL.white);
-        P.star(260, 880, 28, COL.white);
+      // sello
+      const sp = back(seg(t, 2.3, 2.8));
+      if (sp > 0) {
+        ctx.save(); ctx.translate(800, 960); ctx.rotate(0.25); ctx.scale(sp, sp);
+        line(ellipse(0, 0, 130, 64), COL.red, 7);
+        text(K.portada.sello, 0, 14, { size: 40, color: COL.red });
+        ctx.restore();
       }
-      paragraph(K.portada.abajo, 545, 1530, 640, { size: 44, color: COL.white, outline: COL.darkred, outlineW: 8, count: (t - 2.6) * 50 });
+      paragraph(K.portada.abajo, 545, 1450, 680, { size: 42, color: COL.white, outline: COL.darkbrown, outlineW: 8, count: (t - 2.6) * 50 });
       ctx.restore();
       if (live && !st.open && t > 2.6) {
         ctx.save(); ctx.globalAlpha = 0.6 + Math.sin(t * 4) * 0.4;
@@ -99,310 +193,449 @@
     auto(t, st, fx) { if (!st.open && t > 4.6) { st.open = t; fx.pop(); } }
   };
 
-  /* ======================= CAP 1: niños ======================= */
-  const kids = [
-    { name: K.nombre, x: 540, hair: 'long', hairColor: COL.brown, shirt: COL.pink, pants: COL.purple, label: COL.pink },
-    { name: K.hermana, x: 290, hair: 'long', hairColor: COL.darkbrown, shirt: COL.green, pants: COL.navy, label: COL.green },
-    { name: K.primo, x: 800, hair: 'short', hairColor: COL.black, shirt: COL.red, pants: COL.blue, label: COL.red }
-  ];
-  const cap1 = {
-    hold: 2.5,
-    dur: () => 1.6 + textTime(K.capitulos[0].texto),
+  /* ======================= PASO 1: el horno ======================= */
+  const origen = {
+    hold: 4,
+    dur: () => 1.4 + textTime(PG.origen.texto),
+    ready: (st) => st.inter != null,
     draw(t, st, live) {
-      const ch = K.capitulos[0];
-      P.sky(t);
-      P.sun(900, 420, 70, t);
-      P.cloud(220 + Math.sin(t * 0.3) * 30, 400, 0.9);
-      P.ground(1200, COL.green, ease(seg(t, 0, 0.6)));
-      P.house(80, 1200, 230, 200, { p: seg(t, 0.2, 1.2), color: COL.yellow });
-      P.tree(960, 1210, 0.8);
-      for (const f of [[170, 1300, COL.red], [420, 1330, COL.purple], [700, 1310, COL.yellow], [930, 1340, COL.pink]]) P.flower(f[0], f[1], f[2], t);
-      // pelota entre Tati y Yadir
-      const bt = (t * 0.7) % 2, k = bt < 1 ? bt : 2 - bt;
-      const bx = 330 + k * 430, by = 1000 - Math.sin(k * Math.PI) * 220;
-      if (t > 1.2) shape(ellipse(bx, by, 32, 32), COL.blue, COL.navy, 5), line(ellipse(bx, by, 32, 12), COL.white, 4);
-      kids.forEach((kd, i) => {
-        const s = back(seg(t, 0.8 + i * 0.2, 1.4 + i * 0.2));
-        if (s <= 0) return;
-        const j = st.jump && st.jump[i] != null ? Math.max(0, Math.sin(seg(t - st.jump[i], 0, 0.6) * Math.PI)) * 120 : 0;
-        P.person(kd.x, 1290, 0.62 * s, { hair: kd.hair, hairColor: kd.hairColor, shirt: kd.shirt, pants: kd.pants, t: t + i, jump: j, wave: i === 0, flip: i === 2 });
-        const lp = seg(t, 1.8 + i * 0.25, 2.4 + i * 0.25);
-        if (lp > 0) {
-          text(kd.name, kd.x, 920 - (i === 0 ? 40 : 0), { size: 58, color: kd.label, count: Math.ceil(kd.name.length * lp * 2) });
-          line([[kd.x, 940 - (i === 0 ? 40 : 0)], [kd.x + 10, 990 - (i === 0 ? 40 : 0)]], kd.label, 5, { p: lp });
-        }
-        if (st.jump && st.jump[i] != null && t - st.jump[i] < 1.6) P.bubble(kd.x, 760, '¡yo!', 46);
-      });
-      header(ch.titulo, t);
-      hint(ch.pista, t, live, true);
-      narrate(ch.texto, t, 1.2);
-    },
-    tap(x, y, t, st, fx) {
-      for (let i = 0; i < kids.length; i++) {
-        if (Math.abs(x - kids[i].x) < 110 && y > 970 && y < 1310) {
-          st.jump = st.jump || {}; st.jump[i] = t; fx.boing(); return true;
+      const k = PG.origen;
+      P.sky(t, { color: COL.cream, h: 1300 });
+      shape(rect(-20, 1200, 1120, 300), '#d9b38c', null, 0, { alpha: 0.6 });
+      // azulejos
+      for (let i = 0; i < 9; i++) line([[i * 130, 700], [i * 130, 1200]], COL.sky, 3, { alpha: 0.4 });
+      for (let j = 0; j < 4; j++) line([[0, 720 + j * 130], [1080, 720 + j * 130]], COL.sky, 3, { alpha: 0.4 });
+      // corazones que vuelan al horno
+      const fly = seg(t, 1.0, 2.4);
+      if (fly < 1 && t > 0.6) {
+        const e = ease(fly);
+        P.heart(lerp(150, 520, e), lerp(560, 860, e) - Math.sin(e * Math.PI) * 120, 4, COL.red);
+        P.heart(lerp(930, 560, e), lerp(560, 860, e) - Math.sin(e * Math.PI) * 120, 4, COL.pink);
+        if (fly < 0.6) {
+          text(k.etiquetas[0], 190, 470, { size: 40, color: COL.darkred });
+          text(k.etiquetas[1], 880, 470, { size: 40, color: COL.darkred });
         }
       }
+      const shake = st.inter == null && fly >= 1 ? 0.6 : 0;
+      const glow = st.inter != null ? ease(seg(t - st.inter, 0, 0.4)) : (fly >= 1 ? 0.15 : 0);
+      P.oven(540, 1220, t, { shake, glow });
+      if (st.inter != null) {
+        const d = t - st.inter;
+        if (d < 1.6) text('¡DING!', 540, 680, { size: 110, color: COL.red, outline: COL.yellow, font: C.FONT_TITLE });
+        // salen los tres bebés
+        [[TATI, 300], [DAYANA, 540], [YADIR, 780]].forEach(([o, x], i) => {
+          const kk = ease(seg(d, 0.3 + i * 0.2, 1.0 + i * 0.2));
+          if (kk <= 0) return;
+          const bx = lerp(540, x, kk), by = lerp(1100, 1390, kk) - Math.sin(kk * Math.PI) * 300;
+          P.person(bx, by, 0.42, as(o, { t: t + i, wave: kk >= 1 && i === 1, shirt: COL.white, pants: COL.white, mouth: kk < 1 ? 'o' : null }));
+        });
+      }
+      header(k.titulo, t);
+      hint(k.pista, t, live, st.inter == null && fly >= 1);
+      narrate(k.texto, t, 1.1);
+    },
+    tap(x, y, t, st, fx) {
+      if (st.inter == null && x > 280 && x < 800 && y > 800 && y < 1260) { st.inter = t; fx.tada(); return true; }
       return false;
     },
-    auto(t, st, fx) {
-      const d = this.dur();
-      [0, 1, 2].forEach(i => {
-        st.jump = st.jump || {};
-        if (t > d - 1.5 + i * 0.4 && st.jump[i] == null) { st.jump[i] = t; fx.boing(); }
-      });
-    }
+    auto(t, st, fx) { if (st.inter == null && t > this.dur() - 1.0) { st.inter = t; fx.tada(); } }
   };
 
-  /* ======================= CAP 2: el cole ======================= */
-  const cap2 = {
-    hold: 2.5,
-    dur: () => 1.6 + textTime(K.capitulos[1].texto),
-    draw(t, st, live) {
-      const ch = K.capitulos[1];
-      P.sky(t);
-      P.cloud(850 + Math.sin(t * 0.3) * 30, 420, 0.8);
-      P.ground(1230, COL.green, ease(seg(t, 0, 0.5)));
-      shape([[380, 1230], [700, 1230], [1000, 1480], [80, 1480]], COL.grey, null, 0, { alpha: 0.35 });
-      const ring = st.ring != null ? Math.max(0, 1 - (t - st.ring) / 1.6) : 0;
+  /* ======================= INGREDIENTE 1: la tía ======================= */
+  const tia = ingredient({
+    k: PG.tia, n: 1,
+    bg(t) { sceneBase(t); P.house(40, 1240, 250, 230, { color: COL.yellow, roof: COL.red }); },
+    cast(t, st) {
+      const hug = Math.sin(t * 3) * 0.08;
+      return [
+        { x: 360, y: 1290, s: 0.5, o: as(TATI, {}) },
+        { x: 470, y: 1300, s: 0.5, o: as(DAYANA, { wave: true }) },
+        { x: 620, y: 1270, s: 0.85, o: as(TIA, { armL: Math.PI - 0.5 + hug, armR: 0.35 - hug, mouth: st.inter != null ? 'laugh' : null }) },
+        { x: 730, y: 1290, s: 0.5, o: as(YADIR, { armL: Math.PI - 0.15, armR: Math.PI - 0.45, flip: false }) }
+      ];
+    },
+    fg(t, st) {
+      if (st.inter != null && (st.pot == null || t < st.pot + 0.4)) {
+        const d = t - st.inter;
+        P.bubbleLines(560, 700, [PG.tia.globo], 56, { tail: 610, color: COL.purple });
+        for (let i = 0; i < 4; i++) P.heart(560 + Math.sin(d * 3 + i) * 120, 900 - ((d * 0.6 + i / 4) % 1) * 300, 2.2, [COL.red, COL.pink][i % 2]);
+      }
+    },
+    hit: (x, y) => x > 520 && x < 720 && y > 850 && y < 1290,
+    onInter: (fx) => fx.tada()
+  });
+
+  /* ======================= INGREDIENTE 2: Tati y el chantaje ======================= */
+  const tati = ingredient({
+    k: PG.tati, n: 2,
+    bg(t, st) {
+      P.sky(t, { color: COL.lightpink, h: 1300 });
+      shape(rect(-20, 1240, 1120, 260), '#d9b38c', null, 0, { alpha: 0.6 });
+      // ventana
+      shape(rect(700, 470, 240, 200), COL.sky, COL.darkbrown, 6);
+      line([[820, 470], [820, 670]], COL.darkbrown, 4); line([[700, 570], [940, 570]], COL.darkbrown, 4);
+      P.table(120, 560, 1050);
+      P.cookieJar(330, 1048, true);
+    },
+    cast(t, st) {
+      const busted = st.inter != null;
+      const sneak = Math.sin(t * 4) * 0.15;
+      return [
+        { x: 250, y: 1300, s: 0.5, o: as(DAYANA, { armR: busted ? -1.9 : -1.2 + sneak, armL: busted ? -1.2 : Math.PI - 1.2, mouth: busted ? 'o' : null }) },
+        { x: 440, y: 1300, s: 0.5, o: as(YADIR, { armL: busted ? Math.PI + 1.2 : Math.PI + 0.8 - sneak, armR: busted ? -1.9 : 1.2, mouth: busted ? 'o' : null }) },
+        { x: 730, y: 1300, s: 0.56, o: as(TATI, { armL: Math.PI - 0.4, armR: busted ? -0.3 : 1.2, mouth: busted ? 'laugh' : 'flat' }),
+          draw: null }
+      ];
+    },
+    fg(t, st) {
+      if (st.inter != null && (st.pot == null || t < st.pot + 0.4)) {
+        P.bubbleLines(560, 650, PG.tati.globo, 46, { tail: 700 });
+        text('!', 250, 990, { size: 90, color: COL.red, font: C.FONT_TITLE });
+        text('!', 440, 990, { size: 90, color: COL.red, font: C.FONT_TITLE });
+        // libretica de Tati
+        shape(rect(770, 1080, 60, 76), COL.yellow, COL.darkbrown, 4);
+      }
+    },
+    hit: (x, y) => x > 620 && x < 860 && y > 950 && y < 1300,
+    onInter: (fx) => fx.boing()
+  });
+
+  /* ======================= INGREDIENTE 3: el cole ======================= */
+  const cole = ingredient({
+    k: PG.cole, n: 3, potDelay: 2.6,
+    bg(t, st) {
+      sceneBase(t, { sun: false, cloudX: 160 });
+      const ring = st.inter != null ? Math.max(0, 1 - (t - st.inter) / 1.6) : 0;
       const sp = back(seg(t, 0.2, 1));
       if (sp > 0) {
-        const ctx = C.ctx; ctx.save(); ctx.translate(540, 1230); ctx.scale(sp, sp); ctx.translate(-540, -1230);
-        P.school(540, 1230, t, { ring });
+        const ctx = C.ctx; ctx.save(); ctx.translate(520, 1240); ctx.scale(sp * 0.9, sp * 0.9); ctx.translate(-520, -1240);
+        P.school(520, 1240, t, { ring });
         ctx.restore();
       }
-      if (ring > 0) {
-        text('¡RIIIING!', 540, 520, { size: 80, color: COL.red, outline: COL.yellow, font: C.FONT_TITLE });
-        for (const sgn of [-1, 1]) for (let k = 0; k < 3; k++) line([[540 + sgn * (70 + k * 20), 640 - k * 22], [540 + sgn * (110 + k * 30), 620 - k * 40]], COL.orange, 6);
-      }
-      // los tres caminando con morrales
+      if (ring > 0) text('¡RIIIING!', 520, 590, { size: 76, color: COL.red, outline: COL.yellow, font: C.FONT_TITLE });
+    },
+    cast(t, st) {
       const walk = ease(seg(t, 0.6, 2.8));
-      const run = st.ring != null ? ease(seg(t - st.ring, 0.2, 1.4)) : 0;
-      kids.forEach((kd, i) => {
-        const x = -150 + walk * (230 + i * 150) + run * 120;
-        const j = ring > 0 ? Math.abs(Math.sin((t - st.ring) * 9 + i)) * 60 * ring : 0;
-        P.person(x, 1420 - i * 4, 0.6, { hair: kd.hair, hairColor: kd.hairColor, shirt: COL.white, sleeve: COL.white, pants: COL.navy, t: t + i, walk: walk < 1 || run > 0 && run < 1 ? t * 9 + i : 0, backpack: [COL.pink, COL.green, COL.red][i], jump: j });
-      });
-      header(ch.titulo, t);
-      hint(ch.pista, t, live, st.ring == null);
-      narrate(ch.texto, t, 1.2);
+      const ring = st.inter != null ? Math.max(0, 1 - (t - st.inter) / 1.6) : 0;
+      return [DAYANA, TATI, YADIR].map((o, i) => ({
+        x: -150 + walk * (260 + i * 150), y: 1400 - i * 4, s: 0.55,
+        o: as(o, { shirt: COL.white, sleeve: COL.white, pants: COL.navy, walk: walk < 1 ? t * 9 + i : 0, backpack: [COL.pink, COL.green, COL.red][i], jump: ring > 0 ? Math.abs(Math.sin((t - st.inter) * 9 + i)) * 60 * ring : 0 })
+      }));
     },
-    tap(x, y, t, st, fx) {
-      if (Math.abs(x - 540) < 130 && y > 480 && y < 760) { st.ring = t; fx.bell(); return true; }
-      return false;
-    },
-    auto(t, st, fx) { if (st.ring == null && t > this.dur() - 1.2) { st.ring = t; fx.bell(); } }
-  };
+    hit: (x, y) => near(x, y, 520, 650, 160),
+    onInter: (fx) => fx.bell()
+  });
 
-  /* ======================= CAP 3: casa nueva ======================= */
-  const adults = [
-    { hair: 'long', hairColor: COL.darkbrown, shirt: COL.green, pants: COL.navy },
-    { hair: 'long', hairColor: COL.brown, shirt: COL.purple, pants: COL.jeans },
-    { hair: 'short', hairColor: COL.black, shirt: COL.red, pants: COL.navy, glasses: true }
-  ];
-  const cap3 = {
-    hold: 2.5,
-    dur: () => 1.6 + textTime(K.capitulos[2].texto),
-    draw(t, st, live) {
-      const ch = K.capitulos[2];
-      P.sky(t);
-      P.sun(160, 420, 60, t);
-      P.ground(1250, COL.green, ease(seg(t, 0, 0.5)));
-      P.house(560, 1250, 380, 330, { p: seg(t, 0.2, 1.2), color: COL.sky, roof: COL.purple, chimney: true });
+  /* ======================= INGREDIENTE 4: la motera ======================= */
+  const moto = ingredient({
+    k: PG.moto, n: 4, potDelay: 3,
+    bg(t, st) {
+      const ctx = C.ctx;
+      const pin = back(seg(t, 0.2, 1));
+      if (pin > 0) {
+        ctx.save(); ctx.translate(540, 700); ctx.scale(pin, pin); ctx.translate(-540, -700);
+        P.photo(IMG.moto, 540, 700, 440, -0.05, { h: 560, focusY: 0.55, frame: COL.red });
+        ctx.restore();
+      }
+      if (st.inter != null) {
+        const s = back(seg(t - st.inter, 1.0, 1.5));
+        if (s > 0) {
+          ctx.save(); ctx.translate(690, 900); ctx.rotate(-0.2); ctx.scale(s, s);
+          line(rect(-170, -46, 340, 86), COL.red, 7);
+          text(PG.moto.sello, 0, 14, { size: 44, color: COL.red, font: C.FONT_TITLE });
+          ctx.restore();
+        }
+      }
+      shape(rect(-20, 1240, 1120, 140), COL.grey, null, 0, { alpha: 0.7 });
+      for (let x = 0; x < 1100; x += 160) line([[x, 1310], [x + 80, 1310]], COL.yellow, 8);
+    },
+    cast(t, st) {
+      let mx = 300, lean = 0, wob = 0;
+      if (st.inter != null) {
+        const d = t - st.inter;
+        const k = clamp(d / 2.2);
+        mx = 300 + ease(k) * 260;
+        wob = Math.sin(d * 9) * 0.12 * (1 - k);
+        lean = wob;
+      }
+      return [
+        { x: mx, y: 1330, s: 0.5, draw: (x, y, s) => P.moto(x, y, s, t, { spin: t * 3, bob: true, lean, hair: DAYANA.hairColor, skin: DAYANA.skin, light: st.inter != null }) },
+        { x: 760, y: 1300, s: 0.55, o: as(YADIR, { wave: st.inter != null, walk: 0 }) }
+      ];
+    },
+    fg(t, st) {
+      if (st.inter != null) {
+        const d = t - st.inter;
+        if (d < 2.4 && st.pot == null) {
+          P.bubble(420 + ease(clamp(d / 2.2)) * 220, 1000, PG.moto.globos[0], 40);
+          if (d > 1) P.bubble(800, 930, PG.moto.globos[1], 40);
+        }
+      }
+    },
+    hit: (x, y) => y > 1050 && y < 1400 && x < 700,
+    onInter: (fx) => fx.brum()
+  });
+
+  /* ======================= INGREDIENTE 5: Danielito ======================= */
+  const danielito = ingredient({
+    k: PG.danielito, n: 5, potDelay: 3,
+    bg(t, st) {
+      sceneBase(t, { sky: COL.lightpink, sunX: 900, cloudX: 260 });
+      // universidad al fondo
+      shape(rect(560, 900, 300, 340), COL.cream, COL.darkbrown, 5);
+      shape([[540, 900], [710, 800], [880, 900], [540, 900]], COL.blue, COL.navy, 5);
+      for (let i = 0; i < 4; i++) line([[590 + i * 75, 960], [590 + i * 75, 1240]], COL.darkbrown, 6);
+      text('U', 710, 880, { size: 54, color: COL.white, font: C.FONT_TITLE });
+      const fly = seg(t, 0.4, 2.0);
+      if (fly < 1) P.stork(lerp(-200, 420, ease(fly)), 520 + Math.sin(t * 3) * 20, t, true);
+      else P.stork(420 + (t - 2) * 300, 520 - (t - 2) * 60, t, false);
+    },
+    cast(t, st) {
+      const hasBaby = t > 2.0;
+      return [
+        { x: 230, y: 1300, s: 0.8, o: as(TIA, { armR: -0.25, armL: Math.PI - 1.2 }) },
+        { x: 380, y: 1310, s: 0.78, draw: (x, y, s, k) => {
+          P.person(x, y, s, as(DAYANA, { t, armL: Math.PI - 0.9, armR: 0.5, mouth: st.inter != null ? 'laugh' : null }));
+          if (k > 0) return;
+          P.books(x - 92 * s, y - 210 * s);
+          if (hasBaby) {
+            shape(ellipse(x + 88 * s, y - 220 * s, 46 * s, 36 * s), COL.lightpink, COL.pink, 4);
+            shape(ellipse(x + 96 * s, y - 246 * s, 22 * s, 20 * s), DANI.skin, '#b07a4f', 3);
+          }
+          if (st.inter != null) {
+            const d = t - st.inter, f = ease(seg(d, 0, 0.8));
+            P.gradCap(x, lerp(300, y - 380 * s, f), -0.15);
+          }
+        } }
+      ];
+    },
+    fg(t, st) {
+      if (st.inter != null) {
+        const d = t - st.inter, s = back(seg(d, 0.6, 1.2));
+        if (s > 0) {
+          const ctx = C.ctx; ctx.save(); ctx.translate(540, 470); ctx.scale(s, s);
+          shape(rect(-260, -70, 520, 110), COL.yellow, COL.orange, 6);
+          text(PG.danielito.titulo2, 0, 20, { size: 80, color: COL.purple, font: C.FONT_TITLE });
+          ctx.restore();
+          P.star(220, 470, 30, COL.yellow); P.star(860, 470, 30, COL.yellow);
+        }
+      }
+    },
+    hit: (x, y) => x > 260 && x < 500 && y > 900 && y < 1320,
+    onInter: (fx) => fx.tada()
+  });
+
+  /* ======================= INGREDIENTE 6: el rancho ======================= */
+  const rancho = ingredient({
+    k: PG.rancho, n: 6,
+    bg(t, st) {
+      sceneBase(t, { sunX: 160, cloudX: 860 });
+      P.tree(80, 1240, 0.7);
+      P.house(500, 1240, 380, 300, { color: '#c98b55', roof: COL.darkbrown, door: COL.darkbrown, chimney: true });
+      // humo / corazones de la chimenea
+      for (let i = 0; i < 4; i++) {
+        const kk = (t * 0.4 + i / 4) % 1;
+        if (st.inter != null) P.heart(790 + Math.sin(kk * 6) * 20, 760 - kk * 260, 2.2, COL.pink);
+        else shape(ellipse(790 + Math.sin(kk * 6) * 20, 760 - kk * 260, 20 + kk * 20, 16 + kk * 14), COL.white, COL.grey, 3, { alpha: 1 - kk });
+      }
+      const sw = st.inter != null ? Math.sin((t - st.inter) * 8) * 0.2 * Math.max(0, 1 - (t - st.inter) / 2) : 0;
+      P.signpost(690, 1080, PG.rancho.letrero, { h: 120, rot: sw, color: '#e0b07a', size: 44, font: C.FONT_TITLE });
+      P.clothesline(140, 480, 860, t);
+    },
+    cast(t, st) {
+      const j = (i) => st.inter != null ? Math.abs(Math.sin((t - st.inter) * 7 + i)) * 40 * Math.max(0, 1 - (t - st.inter) / 2) : 0;
+      return [
+        { x: 130, y: 1330, s: 0.72, o: as(TIA, { jump: j(0) }) },
+        { x: 250, y: 1330, s: 0.66, o: as(TATI, { jump: j(1) }) },
+        { x: 370, y: 1335, s: 0.66, o: as(DAYANA, { jump: j(2), armR: 0.6 }) },
+        { x: 450, y: 1340, s: 0.3, o: as(DANI, { jump: j(3), wave: true }) },
+        { x: 560, y: 1335, s: 0.66, o: as(YADIR, { jump: j(4), backpack: COL.orange, wave: true }) }
+      ];
+    },
+    hit: (x, y) => near(x, y, 690, 960, 170),
+    onInter: (fx) => fx.tada()
+  });
+
+  /* ======================= INGREDIENTE 7: Aslei ======================= */
+  const aslei = ingredient({
+    k: PG.aslei, n: 7, potDelay: 3.2,
+    bg(t, st) {
+      P.sky(t, { color: COL.cream, h: 1300 });
+      shape(rect(-20, 1240, 1120, 260), '#c9a27a', null, 0, { alpha: 0.6 });
+      // sofá
+      shape(rect(120, 1000, 520, 120), COL.purple, P.shade(COL.purple), 5);
+      shape(rect(100, 1100, 560, 90), COL.purple, P.shade(COL.purple), 5);
       // letrero
-      const found = st.found != null ? ease(seg(t - st.found, 0, 0.5)) : 0;
+      const ctx = C.ctx; ctx.save(); ctx.translate(540, 470); ctx.rotate(-0.03);
+      shape(rect(-330, -50, 660, 90), COL.white, COL.red, 5);
+      text(PG.aslei.letrero, 0, 14, { size: 42, color: COL.red });
+      ctx.restore();
+    },
+    cast(t, st) {
+      const inter = st.inter != null, d = inter ? t - st.inter : 0;
+      const tug = inter && d > 1.6 ? 0 : Math.sin(t * 7) * 20;
+      const hugging = inter && d > 1.6;
+      const list = [
+        { x: 450, y: 1340, s: 0.72, o: as(YADIR, { armL: Math.PI + 0.9, armR: -0.9, sweat: !hugging, mouth: 'o' }) },
+        { x: hugging ? 460 : 400 + tug, y: 1400, s: 0.3, o: as(DANI, { armR: hugging ? 0.2 : -0.1, mouth: hugging ? null : 'flat', flip: false }) },
+        { x: hugging ? 540 : 600 + tug, y: 1400, s: 0.3, o: as(ASLEI, { armL: hugging ? Math.PI - 0.2 : Math.PI + 0.1, mouth: hugging ? null : 'flat' }) }
+      ];
+      if (inter) {
+        const a = back(seg(d, 0.3, 0.9));
+        if (a > 0) {
+          list.unshift({ x: 150, y: 1320, s: 0.72 * a, o: as(TIA, { mouth: 'laugh', armR: -0.6 }) });
+          list.push({ x: 760, y: 1320, s: 0.72 * a, o: as(DAYANA, { mouth: 'laugh', armL: Math.PI + 0.6, flip: true }) });
+        }
+      }
+      return list;
+    },
+    fg(t, st) {
+      const inter = st.inter != null, d = inter ? t - st.inter : 0;
+      if (st.pot != null && t > st.pot + 0.6) { /* ya todos están en la olla */ }
+      else if (!inter || d <= 1.6) P.teddy(500 + Math.sin(t * 7) * 20, 1280, Math.sin(t * 7) * 0.3);
+      else for (let i = 0; i < 3; i++) P.heart(500 + (i - 1) * 50, 1180 - ((d + i * 0.3) % 1) * 120, 1.8, COL.red);
+      if (inter && st.pot == null) {
+        P.bubbleLines(450, 700, PG.aslei.quejas, 40, { tail: 450 });
+        if (d > 0.8) { P.bubble(200, 880, PG.aslei.risa, 40); P.bubble(780, 880, PG.aslei.risa, 40); }
+      }
+    },
+    hit: (x, y) => y > 1150 && y < 1420 && x > 300 && x < 700,
+    onInter: (fx) => fx.boing()
+  });
+
+  /* ======================= INGREDIENTE 8: casa nueva ======================= */
+  const casa = ingredient({
+    k: PG.casa, n: 8,
+    bg(t, st) {
+      sceneBase(t, { sunX: 160 });
+      P.house(500, 1240, 380, 320, { color: COL.sky, roof: COL.purple, chimney: true });
+      const found = st.inter != null ? ease(seg(t - st.inter, 0, 0.5)) : 0;
       if (t > 1) {
-        line([[470, 1250], [470, 960]], COL.darkbrown, 10);
-        const ctx = C.ctx; ctx.save(); ctx.translate(470, 900); ctx.scale(1, 1 - Math.sin(found * Math.PI) * 0.9);
+        line([[420, 1240], [420, 960]], COL.darkbrown, 10);
+        const ctx = C.ctx; ctx.save(); ctx.translate(420, 900); ctx.scale(1, 1 - Math.sin(found * Math.PI) * 0.9);
         shape(rect(-200, -70, 400, 130), found > 0.5 ? COL.yellow : COL.white, COL.darkbrown, 6);
         text(found > 0.5 ? '¡NUESTRA CASA!' : 'SE ARRIENDA', 0, 18, { size: found > 0.5 ? 40 : 54, color: found > 0.5 ? COL.red : COL.black, font: C.FONT_TITLE });
         ctx.restore();
       }
-      // los tres buscando
-      const walk = ease(seg(t, 0.4, 2.6));
-      adults.forEach((a, i) => {
-        const x = -200 + walk * (300 + i * 115);
-        const j = found > 0 ? Math.abs(Math.sin((t - st.found) * 7 + i)) * 50 : 0;
-        P.person(x, 1430 - (i % 2) * 10, 0.62, Object.assign({ t: t + i, walk: walk < 1 ? t * 9 + i : 0, jump: j, wave: found > 0 && i === 1 }, a));
-      });
-      if (walk >= 1 && found === 0) {
-        // lupa
-        const lx = 300 + Math.sin(t * 2) * 30;
-        line([[lx, 1110], [lx + 50, 1170]], COL.darkbrown, 10);
-        line(ellipse(lx - 20, 1085, 36, 36), COL.grey, 7);
-      }
       if (found > 0) for (let k = 0; k < 6; k++) {
-        const ht = (t - st.found) * 0.8 + k / 6;
-        P.heart(430 + k * 70 + Math.sin(ht * 6) * 20, 1100 - (ht % 1) * 500, 2.2, [COL.red, COL.pink][k % 2]);
+        const ht = (t - st.inter) * 0.8 + k / 6;
+        P.heart(400 + k * 70 + Math.sin(ht * 6) * 20, 1100 - (ht % 1) * 500, 2.2, [COL.red, COL.pink][k % 2]);
       }
-      header(ch.titulo, t);
-      hint(ch.pista, t, live, st.found == null);
-      narrate(ch.texto, t, 1.2);
     },
-    tap(x, y, t, st, fx) {
-      if (st.found == null && Math.abs(x - 470) < 200 && y > 800 && y < 1000) { st.found = t; fx.tada(); return true; }
-      return false;
+    cast(t, st) {
+      const walk = ease(seg(t, 0.4, 2.6));
+      const found = st.inter != null;
+      return [TATI, DAYANA, YADIR].map((o, i) => ({
+        x: -200 + walk * (300 + i * 110), y: 1400 - (i % 2) * 10, s: 0.6,
+        o: as(o, { walk: walk < 1 ? t * 9 + i : 0, jump: found ? Math.abs(Math.sin((t - st.inter) * 7 + i)) * 50 : 0, wave: found && i === 1 })
+      }));
     },
-    auto(t, st, fx) { if (st.found == null && t > this.dur() - 1.2) { st.found = t; fx.tada(); } }
-  };
+    fg(t, st) {
+      if (st.inter == null && t > 2.6) {
+        const lx = 300 + Math.sin(t * 2) * 30;
+        line([[lx, 1060], [lx + 50, 1120]], COL.darkbrown, 10);
+        line(ellipse(lx - 20, 1035, 36, 36), COL.grey, 7);
+      }
+    },
+    hit: (x, y) => near(x, y, 420, 900, 210),
+    onInter: (fx) => fx.tada()
+  });
 
-  /* ======================= CAP 4: hoy ======================= */
-  const cap4 = {
-    hold: 2.5,
-    dur: () => 1.6 + textTime(K.capitulos[3].texto),
-    draw(t, st, live) {
-      const ch = K.capitulos[3];
-      P.sky(t, { color: COL.lightpink });
-      P.ground(1260, COL.green, ease(seg(t, 0, 0.5)));
-      P.house(60, 1260, 300, 260, { p: seg(t, 0.2, 1.1), color: COL.orange, roof: COL.brown });
-      P.house(720, 1260, 300, 260, { p: seg(t, 0.4, 1.3), color: COL.yellow, roof: COL.red });
-      if (t > 1.2) {
-        text('los abuelos', 210, 1340, { size: 46, color: COL.darkbrown });
-        text('Dayana y Tati', 870, 1340, { size: 46, color: COL.darkbrown });
-      }
-      // camino de corazones (arco)
-      const arc = [];
-      for (let i = 0; i <= 30; i++) {
-        const k = i / 30;
-        arc.push([250 + k * 580, 820 - Math.sin(k * Math.PI) * 300]);
-      }
-      const ap = seg(t, 1.2, 2.6);
-      for (let i = 0; i < 30; i += 2) {
-        if (i / 30 > ap) break;
-        line([arc[i], arc[i + 1]], COL.red, 6);
-      }
-      // corazones viajando
-      const sends = (st.sends || []).concat([0.5, 2, 3.5].map(v => v + 2.6));
-      for (const s0 of sends) {
-        const k = (t - s0) / 1.8;
-        if (k < 0 || k > 1) continue;
-        const kk = (s0 * 13 | 0) % 2 ? k : 1 - k;
-        const p = arc[Math.min(30, Math.round(kk * 30))];
-        P.heart(p[0], p[1] - 10, 3 + Math.sin(k * Math.PI) * 1.5, COL.red);
-      }
-      if (ap >= 1) {
-        P.heart(250, 820, 2.5 + Math.sin(t * 5) * 0.4, COL.pink);
-        P.heart(830, 820, 2.5 + Math.sin(t * 5 + 1) * 0.4, COL.pink);
-      }
-      header(ch.titulo, t);
-      hint(ch.pista, t, live, !(st.sends && st.sends.length));
-      narrate(ch.texto, t, 1.4);
+  /* ======================= INGREDIENTE 9: Villagarzón → Mocoa ======================= */
+  const cerquita = ingredient({
+    k: PG.cerquita, n: 9, potDelay: 3.4,
+    bg(t, st) {
+      const raining = st.inter != null;
+      P.sky(t, { color: raining ? '#b8c4d6' : COL.sky, h: 1300 });
+      if (!raining) P.sun(540, 420, 50, t);
+      P.ground(1240, COL.green, ease(seg(t, 0, 0.5)));
+      // carretera cortita
+      shape([[-20, 1290], [1100, 1270], [1100, 1350], [-20, 1370]], COL.grey, null, 0, { alpha: 0.7 });
+      P.signpost(110, 1250, PG.cerquita.pueblos[0], { h: 200, size: 38, color: COL.green, textColor: COL.white });
+      P.house(700, 1240, 300, 260, { color: COL.yellow, roof: COL.red });
+      P.signpost(620, 1250, PG.cerquita.pueblos[1], { h: 330, size: 38, color: COL.green, textColor: COL.white });
+      P.cloud(360, 560, 1.0);
+      if (raining) { P.cloud(600, 520, 0.9); P.rain(t, 200, 900, 620, 1240, 1); }
+      if (raining && t - st.inter > 1.6) P.mattress(850, 1235);
     },
-    tap(x, y, t, st, fx) {
-      if (y > 450 && y < 1300) { (st.sends = st.sends || []).push(t); fx.pop(); return true; }
-      return false;
+    cast(t, st) {
+      const walk = ease(seg(t, 0.4, 2.6));
+      const d = st.inter != null ? t - st.inter : 0;
+      return [
+        { x: lerp(-100, 470, walk), y: 1370, s: 0.58, o: as(YADIR, { walk: walk < 1 ? t * 9 : 0, backpack: COL.orange, armR: st.inter != null ? -1.6 : undefined }) },
+        { x: 640, y: 1250, s: 0.58 * back(seg(d, 0.8, 1.3)), o: as(DAYANA, { wave: st.inter != null, mouth: 'laugh', flip: true }) }
+      ].filter(c => c.s > 0.01);
     },
-    auto(t, st, fx) {
-      st.sends = st.sends || [];
-      const d = this.dur();
-      if (st.sends.length < 3 && t > d - 1.6 + st.sends.length * 0.35) { st.sends.push(t); fx.pop(); }
-    }
-  };
+    fg(t, st) {
+      if (st.inter != null && st.pot == null) {
+        const d = t - st.inter;
+        if (d > 0.4) P.bubble(400, 860, PG.cerquita.pregunta, 40);
+        if (d > 1.2) P.bubble(760, 760, PG.cerquita.respuesta, 52);
+      }
+    },
+    hit: (x, y) => y > 400 && y < 760,
+    onInter: (fx) => fx.blow()
+  });
 
-  /* ======================= CAP 5: la motera ======================= */
-  const cap5 = {
-    hold: 3.5,
-    dur: () => 1.8 + textTime(K.capitulos[4].texto),
+  /* ======================= REVOLVER ======================= */
+  const revolver = {
+    hold: 4,
+    dur: () => 1.2 + textTime(PG.revolver.texto),
+    ready: (st) => (st.stir || 0) >= 4,
     draw(t, st, live) {
-      const ch = K.capitulos[4];
-      const ctx = C.ctx;
-      const pin = back(seg(t, 0.2, 1));
-      if (pin > 0) {
-        ctx.save(); ctx.translate(540, 680); ctx.scale(pin, pin); ctx.translate(-540, -680);
-        P.photo(IMG.moto, 540, 680, 540, -0.05, { h: 700, focusY: 0.55, frame: COL.red });
-        ctx.restore();
+      const k = PG.revolver, ctx = C.ctx;
+      P.sky(t, { color: COL.cream, h: 1300 });
+      shape(rect(-20, 1240, 1120, 260), '#d9b38c', null, 0, { alpha: 0.6 });
+      const stir = st.stir || 0, last = st.lastStir || -9;
+      const spoon = stir > 0 ? (t - last < 0.6 ? (t - last) * 12 : 0) + stir * 2 : null;
+      const out = stir >= 4 ? t - st.doneAt : -1;
+      ctx.save(); ctx.translate(540, 1300); ctx.scale(1, 1); ctx.translate(-540, -1300);
+      P.pot(540, 1330, 2.1, t, { spoon, liquid: stir >= 4 ? COL.yellow : COL.pink, label: stir < 4 ? stir + ' / 4' : '♥' });
+      ctx.restore();
+      // brillos
+      if (out >= 0) {
+        for (let i = 0; i < 8; i++) {
+          const a = i * Math.PI / 4 + t;
+          line([[540 + Math.cos(a) * 280, 1000 + Math.sin(a) * 120], [540 + Math.cos(a) * 330, 1000 + Math.sin(a) * 150]], COL.yellow, 7);
+        }
+        const a1 = back(seg(out, 0.2, 0.9)), a2 = back(seg(out, 0.6, 1.3));
+        if (a1 > 0) {
+          ctx.save(); ctx.translate(lerp(540, 400, a1), lerp(1100, 560, a1)); ctx.scale(a1, a1);
+          P.photo(IMG.juntos1, 0, 0, 560, -0.07, { h: 270, polaroid: true, caption: k.fotos[0], frame: COL.purple, focusY: 0.3 });
+          ctx.restore();
+        }
+        if (a2 > 0) {
+          ctx.save(); ctx.translate(lerp(540, 760, a2), lerp(1100, 700, a2)); ctx.scale(a2, a2);
+          P.photo(IMG.juntos2, 0, 0, 300, 0.06, { h: 340, polaroid: true, caption: k.fotos[1], frame: COL.blue, focusY: 0.35 });
+          ctx.restore();
+        }
       }
-      if (t > 1.1) {
-        text('¡la motera!', 880, 380, { size: 52, color: COL.red, count: Math.ceil((t - 1.1) * 20) });
-        line([[860, 400], [830, 480], [770, 520]], COL.red, 6, { p: seg(t, 1.4, 1.9) });
-        line([[805, 505], [770, 520], [790, 485]], COL.red, 6, { p: seg(t, 1.8, 2.0) });
-        P.star(190, 380, 34, COL.yellow);
-        P.heart(170, 1010, 2.6, COL.pink);
-      }
-      // carretera
-      const ry = 1330;
-      shape(rect(-20, ry - 40, 1120, 120), COL.grey, null, 0, { alpha: 0.7 });
-      for (let x = -40; x < 1100; x += 160) line([[x + ((st.go != null ? (t - st.go) * 900 : 0) % 160) * -1 + 160, ry + 20], [x + 80 + ((st.go != null ? (t - st.go) * 900 : 0) % 160) * -1 + 160, ry + 20]], COL.yellow, 8);
-      // la moto
-      let mx = 280, lean = 0, wind = false;
-      if (st.go != null) {
-        const k = (t - st.go) / 2.2;
-        if (k < 1) {
-          mx = 280 + Math.pow(k, 1.6) * 1500;
-          if (mx > 1400) mx = -400 + (mx - 1400);
-          lean = -0.05; wind = true;
-          for (let i = 0; i < 4; i++) line([[mx - 300 - i * 50, ry - 120 - i * 50], [mx - 420 - i * 70, ry - 120 - i * 50]], COL.navy, 5, { alpha: 0.6 });
-          for (let i = 0; i < 3; i++) shape(ellipse(mx - 280 - i * 70, ry + 10 - i * 10, 30 + i * 12, 24 + i * 8), COL.cream, COL.grey, 3, { alpha: 0.7 });
-          text('¡BRRRUM!', 540, 1170, { size: 84, color: COL.red, outline: COL.yellow, font: C.FONT_TITLE });
-        } else { mx = Math.min(280, -400 + (k - 1) * 1200); if (mx < 280) wind = true; }
-      }
-      const ms = 0.55 * back(seg(t, 0.6, 1.3));
-      if (ms > 0) P.moto(mx, ry + 10, ms, t, { spin: st.go != null ? (t - st.go) * 20 : t * 0.5, bob: true, lean, wind, light: true });
-      header(ch.titulo, t);
-      hint(ch.pista, t, live, st.go == null);
-      narrate(ch.texto, t, 1.4);
+      header(k.titulo, t);
+      hint(k.pista, t, live, stir < 4);
+      narrate(k.texto, t, 1.0);
+    },
+    stirOnce(t, st, fx) {
+      if ((st.stir || 0) >= 4) return;
+      st.stir = (st.stir || 0) + 1; st.lastStir = t; fx.pop();
+      if (st.stir >= 4) { st.doneAt = t; fx.tada(); }
     },
     tap(x, y, t, st, fx) {
-      if (y > 1050 && y < 1420 && (st.go == null || t - st.go > 3.2)) { st.go = t; fx.brum(); return true; }
-      return false;
-    },
-    auto(t, st, fx) { if (st.go == null && t > this.dur() - 1.6) { st.go = t; fx.brum(); } }
-  };
-
-  /* ======================= CAP 6: nosotros ======================= */
-  const cap6 = {
-    hold: 3,
-    dur: () => 1.8 + textTime(K.capitulos[5].texto),
-    draw(t, st, live) {
-      const ch = K.capitulos[5];
-      const ctx = C.ctx;
-      const wig = (i) => st.wig && st.wig[i] != null ? Math.sin((t - st.wig[i]) * 20) * 0.08 * Math.max(0, 1 - (t - st.wig[i])) : 0;
-      const a = back(seg(t, 0.2, 0.9));
-      if (a > 0) {
-        ctx.save(); ctx.translate(500, 560); ctx.scale(a, a); ctx.translate(-500, -560);
-        P.photo(IMG.juntos1, 500, 560, 740, -0.06 + wig(0), { h: 360, polaroid: true, caption: ch.fotos[0], frame: COL.purple, focusY: 0.3 });
-        ctx.restore();
-      }
-      const b = back(seg(t, 0.7, 1.4));
-      if (b > 0) {
-        ctx.save(); ctx.translate(600, 1050); ctx.scale(b, b); ctx.translate(-600, -1050);
-        P.photo(IMG.juntos2, 640, 1130, 390, 0.05 + wig(1), { h: 420, polaroid: true, caption: ch.fotos[1], frame: COL.blue, focusY: 0.35 });
-        ctx.restore();
-      }
-      if (t > 1.4) {
-        P.heart(180, 1000, 3 + Math.sin(t * 4) * 0.3, COL.red);
-        P.heart(240, 1160, 2, COL.pink);
-        P.star(930, 820, 30, COL.yellow);
-        P.star(160, 320, 26, COL.yellow);
-      }
-      for (const w of Object.values(st.wig || {})) {
-        const k = t - w;
-        if (k > 1.6) continue;
-        for (let i = 0; i < 5; i++) P.heart(300 + i * 120 + Math.sin(k * 5 + i) * 20, 1300 - k * 500 - i * 30, 2, [COL.red, COL.pink][i % 2]);
-      }
-      header(ch.titulo, t);
-      hint(ch.pista, t, live, !st.wig);
-      narrate(ch.texto, t, 1.6);
-    },
-    tap(x, y, t, st, fx) {
-      if (y > 300 && y < 800) { (st.wig = st.wig || {})[0] = t; fx.pop(); return true; }
-      if (y > 800 && y < 1440) { (st.wig = st.wig || {})[1] = t; fx.pop(); return true; }
+      if (y > 850 && y < 1450) { this.stirOnce(t, st, fx); return true; }
       return false;
     },
     auto(t, st, fx) {
       const d = this.dur();
-      if ((!st.wig || st.wig[0] == null) && t > d - 1.5) { (st.wig = st.wig || {})[0] = t; fx.pop(); }
-      if (st.wig && st.wig[1] == null && t > d - 0.8) { st.wig[1] = t; fx.pop(); }
+      if (t > d - 1.6 + (st.stir || 0) * 0.45 && (st.stir || 0) < 4) this.stirOnce(t, st, fx);
     }
   };
 
   /* ======================= PASTEL ======================= */
   const cake = {
     hold: 5,
-    dur: () => 1.4 + textTime(K.capitulos[6].texto),
+    dur: () => 1.4 + textTime(PG.pastel.texto),
     ready: (st) => st.out && st.out[0] && st.out[1],
     draw(t, st, live) {
-      const ch = K.capitulos[6];
+      const ch = PG.pastel;
       st.out = st.out || [false, false];
       st.smoke = st.smoke || [null, null];
       const allOut = st.out[0] && st.out[1];
@@ -415,8 +648,8 @@
       const smoke = st.smoke.map(s => s == null ? null : t - s);
       P.cake(540, 1330, t, { out: st.out, smoke });
       ctx.restore();
-      P.balloon(140, 520, COL.red, t, 0.8);
-      P.balloon(950, 560, COL.yellow, t + 2, 0.8);
+      P.balloon(140, 560, COL.red, t, 0.8);
+      P.balloon(950, 600, COL.yellow, t + 2, 0.8);
       if (st.done != null) {
         const k = t - st.done;
         st.conf = st.conf || P.makeConfetti(90, t);
@@ -465,7 +698,6 @@
     hold: 4,
     dur: () => 1.5 + (K.carta.texto.length + K.carta.firma.length) / 34,
     draw(t, st, live) {
-      // hoja de cuaderno
       const ctx = C.ctx;
       const s = ease(seg(t, 0, 0.6));
       ctx.save(); ctx.translate(540, 960); ctx.rotate(-0.015); ctx.scale(0.9 + s * 0.1, 0.9 + s * 0.1); ctx.globalAlpha = s; ctx.translate(-540, -960);
@@ -479,7 +711,7 @@
       text(K.carta.titulo, 200, 250, { size: 64, color: COL.red, align: 'left', count: n });
       const h = paragraph(K.carta.texto, 200, 360, 760, { size: 44, lh: 62, align: 'left', color: COL.navy, count: n - K.carta.titulo.length });
       const firmaN = n - K.carta.titulo.length - K.carta.texto.length;
-      paragraph(K.carta.firma, 960, 360 + h + 70, 700, { size: 52, lh: 64, align: 'right', color: COL.purple, count: firmaN });
+      paragraph(K.carta.firma, 960, 360 + h + 70, 760, { size: 50, lh: 64, align: 'right', color: COL.purple, count: firmaN });
       if (firmaN > K.carta.firma.length) {
         P.heart(880, 1760, 3.2 + Math.sin(t * 5) * 0.3, COL.red);
         P.star(260, 1740, 30, COL.yellow);
@@ -487,5 +719,5 @@
     }
   };
 
-  window.Scenes = { list: [portada, cap1, cap2, cap3, cap4, cap5, cap6, cake, carta], loadImages, IMG };
+  window.Scenes = { list: [portada, origen, tia, tati, cole, moto, danielito, rancho, aslei, casa, cerquita, revolver, cake, carta], loadImages, IMG };
 })();

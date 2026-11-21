@@ -4,63 +4,102 @@
    ========================================================== */
 window.CONTENT = {
   nombre: 'Dayana',
-  hermana: 'Tati',
-  primo: 'Yadir',
   edad: 25,
 
   portada: {
-    arriba: 'El libro de',
-    abajo: 'escrito y dibujado con crayones por tu primo Yadir',
+    arriba: 'Receta secreta',
+    medio: 'cómo se hace una',
+    sello: 'edición 25 años',
+    abajo: 'receta de familia, dibujada con crayones por tu primo Yadir',
     boton: 'toca para abrir'
   },
 
-  capitulos: [
-    {
-      titulo: 'Capítulo 1 · Érase una vez…',
-      pista: 'toca a cada uno',
-      texto: 'Érase una vez una niña llamada Dayana, su hermana Tati y su primo Yadir. Desde chiquitos andaban siempre juntos: juegos, peleas de mentiritas y risas sin fin.'
+  // Las páginas van en orden. "pista" es lo que se puede tocar.
+  paginas: {
+    origen: {
+      titulo: 'Paso 1 · Prender el horno',
+      pista: 'toca el horno',
+      texto: 'Primero, la tía conoció a alguien. Después, mi papá conoció a alguien. El universo prendió el horno… y ¡ding!: salimos nosotros.',
+      etiquetas: ['la tía + alguien', 'mi papá + alguien']
     },
-    {
-      titulo: 'Capítulo 2 · El año del cole',
+    tia: {
+      titulo: 'Ingrediente 1 · Una tía con abrazo de mamá',
+      pista: 'toca a la tía',
+      texto: 'Se necesita una tía de las que abrazan como mamá, y un sobrino que no se le despegaba ni un segundo. Ella hasta le tenía apodo…',
+      globo: '¡Vicentico!'
+    },
+    tati: {
+      titulo: 'Ingrediente 2 · Una hermana con chantaje incluido',
+      pista: 'toca a Tati',
+      texto: 'Agregar una Tati: viene incluida y no se vende por separado. Si hacíamos algo que no debíamos, ya sabíamos el precio de su silencio.',
+      globo: ['o me dan algo…', '¡o le cuento a mi mamá!']
+    },
+    cole: {
+      titulo: 'Ingrediente 3 · Un año de cole compartido',
       pista: 'toca la campana',
-      texto: 'Hubo un año en que me fui a vivir con mi tía y con ustedes. Mismo cole, mismo camino de ida y de vuelta, y las mismas historias para contar en la casa.'
+      texto: 'Un año entero bajo el mismo techo y en el mismo cole: mismo camino, mismas tareas y los mismos chismes de regreso a casa.'
     },
-    {
-      titulo: 'Capítulo 3 · Casa nueva',
-      pista: 'toca el letrero',
-      texto: 'Cuando entré a la universidad volví a vivir con ustedes. Y cuando tocó buscar casa nueva, salimos los tres a buscarla… y la encontramos. Otra vez juntos.'
-    },
-    {
-      titulo: 'Capítulo 4 · Hoy',
-      pista: 'toca el camino de corazones',
-      texto: 'Hoy vivo con los abuelos y mi hermana, pero la distancia no cambia nada. Nos lo seguimos contando todo. Tati y tú son mis hermanas.'
-    },
-    {
-      titulo: 'Capítulo 5 · La motera',
+    moto: {
+      titulo: 'Ingrediente 4 · Una pizca de motera',
       pista: 'toca la moto',
-      texto: 'Y no podía faltar esta foto: la motera más chistosa del mundo. Cuidado, que ahí va Dayana… ¡brrrum!'
+      texto: 'Ya de vuelta donde mis papás, un día llegaste de visita y me pediste que te enseñara a manejar. Tú, nerviosa; yo, de profe. La prueba quedó aprobada… casi.',
+      sello: 'APROBADA (casi)',
+      globos: ['¡ay, ay, ay!', '¡freeena!']
     },
-    {
-      titulo: 'Capítulo 6 · Nosotros',
-      pista: 'toca las fotos',
-      texto: 'Pasan los años, cambian las casas, pero hay algo que nunca cambia: siempre vamos a ser nosotros.',
+    danielito: {
+      titulo: 'Ingrediente 5 · Una dosis extra de valentía',
+      pista: 'toca a Dayana',
+      texto: 'Después llegó Danielito, tu amor más grande. No fue fácil: universidad, bebé y cansancio. Pero con la ayuda de Dios y de tu mamá, que nunca te soltó, lo lograste.',
+      titulo2: 'Psicóloga'
+    },
+    rancho: {
+      titulo: 'Ingrediente 6 · Unos años en el rancho',
+      pista: 'toca el letrero',
+      texto: 'Cuando entré a la universidad llegué al rancho. Casa llena: la tía, Tati, tú, Danielito y yo. Ruido, comida, risas… hogar.',
+      letrero: 'El Rancho'
+    },
+    aslei: {
+      titulo: 'Ingrediente 7 · Una sorpresa de 2021: Aslei',
+      pista: 'toca a los pequeños',
+      texto: 'Al año llegó Aslei. Ella y Danielito: amor y odio en tamaño mini. Me tocaba cuidarlos cuando todos salían… y luego ustedes se reían de mí cuando les daba las quejas.',
+      letrero: 'amor y odio · se venden juntos',
+      quejas: ['¡se pelearon', 'todo el día!'],
+      risa: '¡jajaja!'
+    },
+    casa: {
+      titulo: 'Ingrediente 8 · Una casa buscada entre tres',
+      pista: 'toca el letrero',
+      texto: 'Un día la tía arrendó el rancho y salimos los tres a buscar dónde vivir. Caminamos, preguntamos… y la encontramos. Otra vez juntos.'
+    },
+    cerquita: {
+      titulo: 'Ingrediente 9 · De Villagarzón a Mocoa',
+      pista: 'toca la nube',
+      texto: 'Hoy vivo con los abuelos, pero estamos cerquita: cada semana voy a Mocoa a clases. Y si llueve, ya sabes la pregunta… y tú siempre dices que sí.',
+      pueblos: ['Villagarzón', 'Mocoa'],
+      pregunta: '¿me puedo quedar?',
+      respuesta: '¡claro!'
+    },
+    revolver: {
+      titulo: 'Último paso · Revolver con cariño',
+      pista: 'toca la olla para revolver',
+      texto: 'Se revuelve todo con mucho cariño, hasta que sale lo mejor de la receta: nosotros.',
       fotos: ['desde siempre', 'y para siempre']
     },
-    {
-      titulo: '¡25 velitas!',
+    pastel: {
+      titulo: '¡Al horno durante 25 años!',
       pista: 'pide un deseo y toca las velitas',
-      texto: 'Cierra los ojos, pide un deseo bien grande y sopla las velitas.',
+      texto: 'Listo el pastel. Ahora cierra los ojos, pide un deseo bien grande y sopla las velitas.',
       despues: '¡Feliz cumpleaños, Dayana!'
     }
-  ],
+  },
 
   carta: {
-    titulo: 'Querida Dayana:',
+    titulo: 'Nota del chef:',
     texto:
-      'Hoy cumples 25 y quería regalarte algo que no se pudiera envolver, así que dibujé nuestra historia.\n' +
-      'Desde niños hemos estado juntos: los juegos con Tati, el año en el mismo cole, la casa que salimos a buscar los tres y todos los meses bajo el mismo techo.\n' +
-      'Ya no vivimos juntos, pero eso no cambia nada. Eres como mi hermana, te quiero muchísimo y gracias por estar siempre.\n' +
-      'Que estos 25 vengan llenos de aventuras, caminos abiertos (con o sin moto) y todo lo que sueñas.',
-    firma: 'Con todo mi cariño,\ntu primo Yadir'
+      'Querida Dayana, feliz cumpleaños 25. Esta receta lleva años cocinándose y créeme que salió muy bien (aunque Tati todavía nos cobra los chantajes).\n' +
+      'Te he visto ser prima, hermana, alumna de moto, mamá de Danielito y ahora psicóloga. Sé que no fue fácil, y estoy muy orgulloso de ti.\n' +
+      'Gracias por abrirme siempre la puerta, por las risas y por decirme que sí cada vez que llueve.\n' +
+      'Que estos 25 vengan llenos de salud, de logros y de muchos más momentos juntos. Te quiero muchísimo.',
+    firma: 'Con todo mi cariño,\ntu primo Yadir (alias Vicentico)'
   }
 };

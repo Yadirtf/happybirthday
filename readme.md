@@ -16,27 +16,32 @@ entonces la idea es que en base a lo anterior me ayudes a proponer ideas geniale
 adjunto un carpeta de assets la cual contiene dos fotos, entre ellas, ella en una moto, la cual se ve toda chistosa. 
 ---
 
-## 🖍️ El libro de Dayana (lo que se construyó)
+## 🖍️ Receta secreta: cómo se hace una Dayana (lo que se construyó)
 
 Una página animada con estilo de **libro de crayones**: todo se dibuja a mano en un canvas, con líneas que "tiemblan" cuadro a cuadro (12 fps, como la animación hecha a mano), textura de cera y papel.
 
-**Las páginas del libro**
+La historia se cuenta como una **receta**: en cada página los muñequitos (Dayana, Tati, Yadir, la tía, Danielito y Aslei) hacen su escena y luego saltan a la olla con un "¡plop!".
 
-| # | Página | Interacción |
-|---|--------|-------------|
-| 0 | Portada "El libro de Dayana · 25" | toca para abrir (arranca la cajita musical) |
-| 1 | Érase una vez… los tres de niños | toca a cada uno y salta |
-| 2 | El año del cole | toca la campana |
-| 3 | Casa nueva (universidad, buscando arriendo) | toca el letrero "SE ARRIENDA" |
-| 4 | Hoy: la casa de los abuelos y la de Dayana y Tati | toca y viajan corazones |
-| 5 | La motera (su foto en la moto) | toca la moto: ¡brrrum! |
-| 6 | Nosotros (las otras dos fotos) | toca las fotos |
-| 7 | Pastel con velitas 2 y 5 | sopla tocando las velitas, o con el micrófono 🎤 |
-| 8 | Carta final escrita a mano | ver otra vez / descargar la película |
+| # | Página | Se toca… |
+|---|--------|----------|
+| 0 | Portada: el recetario | para abrir (arranca la cajita musical) |
+| 1 | Paso 1 · Prender el horno (el origen) | el horno: ¡ding! salen los tres |
+| 2 | Una tía con abrazo de mamá | la tía: "¡Vicentico!" |
+| 3 | Una hermana con chantaje incluido | a Tati |
+| 4 | Un año de cole compartido | la campana |
+| 5 | Una pizca de motera (la foto) | la moto |
+| 6 | Una dosis extra de valentía (Danielito y el título) | a Dayana: birrete de psicóloga |
+| 7 | Unos años en el rancho | el letrero |
+| 8 | Una sorpresa de 2021: Aslei | a los pequeños |
+| 9 | Una casa buscada entre tres | el letrero "SE ARRIENDA" |
+| 10 | De Villagarzón a Mocoa | la nube: llueve, "¿me puedo quedar?" |
+| 11 | Revolver con cariño | la olla 4 veces: salen las fotos |
+| 12 | ¡Al horno durante 25 años! | las velitas (o soplar al micrófono) |
+| 13 | Nota del chef (la carta) | ver otra vez / descargar la película |
 
-**Descargar el video:** el botón "⬇ video" graba la película completa (~1,5 min, vertical 720×1280, con música) y la descarga. En Chrome/Edge sale en `.mp4`; en otros navegadores puede salir en `.webm`. Hay que dejar la pestaña abierta mientras graba.
+**Descargar el video:** el botón "⬇ video" graba la película completa (~2,5 min, vertical 720×1280, con música) y la descarga. En Chrome/Edge sale en `.mp4`; en otros navegadores puede salir en `.webm`. Hay que dejar la pestaña abierta mientras graba.
 
-**Cambiar textos:** todo lo que se lee está en [`js/content.js`](js/content.js).
+**Cambiar textos:** todo lo que se lee está en [`js/content.js`](js/content.js). Los colores de pelo y piel de cada muñequito están al inicio de [`js/scenes.js`](js/scenes.js).
 
 **Fotos:** `assets/fotos/` (moto.jpeg, juntos-1.jpeg, juntos-2.jpeg).
 

@@ -22,8 +22,8 @@
     shape(ellipse(30 - sw, -2, 24, 12), o.shoes || COL.black, COL.black, 4);
 
     // pelo largo (detrás)
-    if (o.hair === 'long' || o.hair === 'pony') {
-      const len = o.hair === 'long' ? 110 : 70;
+    if (o.hair === 'long' || o.hair === 'pony' || o.hair === 'medium') {
+      const len = o.hair === 'long' ? 110 : o.hair === 'medium' ? 45 : 70;
       shape(ellipse(0, -330 + len * 0.25, 76, 70 + len * 0.45), o.hairColor, null, 0, { angle: 1.3 });
     }
 
@@ -41,10 +41,10 @@
     arm(44, -268, armR, o);
 
     // cabeza
-    shape(ellipse(0, -348, 58, 62), COL.skin, '#c68a5a', 4);
-    // orejas
-    shape(ellipse(-58, -345, 10, 14), COL.skin, '#c68a5a', 3);
-    shape(ellipse(58, -345, 10, 14), COL.skin, '#c68a5a', 3);
+    const skin = o.skin || COL.skin;
+    shape(ellipse(-58, -345, 10, 14), skin, '#b07a4f', 3);
+    shape(ellipse(58, -345, 10, 14), skin, '#b07a4f', 3);
+    shape(ellipse(0, -348, 58, 62), skin, '#b07a4f', 4);
 
     // pelo arriba
     const top = [];
@@ -58,6 +58,16 @@
       top.push([60, -330], [40, -372], [10, -380], [-20, -376], [-52, -372], [-64, -320]);
     }
     shape(top, o.hairColor || COL.black, null, 0, { angle: 0.4 });
+    if (o.hair === 'pigtails') {
+      shape(ellipse(-78, -330, 22, 40), o.hairColor, null);
+      shape(ellipse(78, -330, 22, 40), o.hairColor, null);
+      shape(ellipse(-64, -360, 9, 9), COL.pink);
+      shape(ellipse(64, -360, 9, 9), COL.pink);
+    }
+    if (o.apron) {
+      shape([[-34, -250], [34, -250], [48, -140], [-48, -140]], COL.white, COL.grey, 3, { alpha: 0.9 });
+      line([[-40, -230], [40, -230]], COL.grey, 3);
+    }
     if (o.hair === 'pony') {
       const sway = Math.sin(t * 5) * 8;
       shape(ellipse(-82 + sway, -330, 26, 54), o.hairColor, null);
@@ -74,7 +84,11 @@
     }
     shape(ellipse(-36, -322, 11, 7), COL.pink, null, 0, { alpha: 0.45 });
     shape(ellipse(36, -322, 11, 7), COL.pink, null, 0, { alpha: 0.45 });
-    line(ellipse(0, -330, 20, 13, { a0: 0.35, a1: Math.PI - 0.35, n: 8 }), COL.darkred, 4);
+    if (o.mouth === 'o') shape(ellipse(0, -322, 10, 13), COL.darkred, COL.darkred, 3);
+    else if (o.mouth === 'laugh') shape(ellipse(0, -326, 20, 16, { a0: 0, a1: Math.PI }), COL.darkred, COL.darkred, 3);
+    else if (o.mouth === 'flat') line([[-14, -324], [14, -326]], COL.darkred, 4);
+    else line(ellipse(0, -330, 20, 13, { a0: 0.35, a1: Math.PI - 0.35, n: 8 }), COL.darkred, 4);
+    if (o.sweat) for (const d of [[-70, -390], [74, -380]]) shape([[d[0], d[1] - 18], [d[0] + 8, d[1]], [d[0], d[1] + 6], [d[0] - 8, d[1]]], COL.sky, COL.blue, 3);
     if (o.glasses) {
       line(ellipse(-22, -350, 17, 15), COL.grey, 3);
       line(ellipse(22, -350, 17, 15), COL.grey, 3);
@@ -86,7 +100,7 @@
     const L = 118, ex = sx + Math.cos(a) * L * 0.5, ey = sy + Math.sin(a) * L * 0.5;
     const hx = sx + Math.cos(a) * L, hy = sy + Math.sin(a) * L;
     line([[sx, sy], [ex + (sx < 0 ? -6 : 6), ey], [hx, hy]], o.sleeve || o.shirt || COL.red, 15);
-    shape(ellipse(hx, hy, 11, 11), COL.skin, '#c68a5a', 3);
+    shape(ellipse(hx, hy, 11, 11), o.skin || COL.skin, '#b07a4f', 3);
   }
   function shade(hex) {
     const n = parseInt(hex.slice(1), 16);
@@ -214,17 +228,17 @@
     shape(ellipse(80, 18, 30, 14), COL.silver, COL.black, 4);
     shape([[-80, -125], [-15, -120], [10, -260], [-60, -270]], COL.black, null); // torso
     line([[-20, -245], [40, -215], [85, -190]], COL.black, 18); // brazo
-    shape(ellipse(88, -190, 13, 13), COL.skin, '#c68a5a', 3);
-    shape(ellipse(-10, -325, 52, 56), COL.skin, '#c68a5a', 4);
+    shape(ellipse(88, -190, 13, 13), o.skin || COL.skin, '#b07a4f', 3);
+    shape(ellipse(-10, -325, 52, 56), o.skin || COL.skin, '#b07a4f', 4);
     const wind = o.wind ? Math.sin(t * 20) * 10 : Math.sin(t * 3) * 5;
-    shape([[-60, -340], [-130 - (o.wind ? 40 : 0), -330 + wind], [-150 - (o.wind ? 60 : 0), -290 + wind], [-70, -305]], COL.brown, null); // cola
+    shape([[-60, -340], [-130 - (o.wind ? 40 : 0), -330 + wind], [-150 - (o.wind ? 60 : 0), -290 + wind], [-70, -305]], o.hair || COL.brown, null); // cola
     const top = [];
     for (let i = 0; i <= 14; i++) {
       const a = Math.PI + 0.1 + (Math.PI - 0.2) * i / 14;
       top.push([-10 + Math.cos(a) * 58, -330 + Math.sin(a) * 60]);
     }
     top.push([40, -350], [0, -360], [-50, -340]);
-    shape(top, COL.brown, null);
+    shape(top, o.hair || COL.brown, null);
     shape(ellipse(12, -330, 6, 7), COL.black);
     line(ellipse(10, -305, 18, 12, { a0: 0.2, a1: Math.PI - 0.6, n: 8 }), COL.darkred, 4);
     shape(ellipse(25, -312, 9, 6), COL.pink, null, 0, { alpha: 0.5 });
@@ -370,5 +384,156 @@
     return out;
   }
 
-  window.Props = { person, sky, sun, cloud, ground, flower, tree, house, heart, star, balloon, bubble, moto, school, photo, cake, confetti, makeConfetti, shade };
+
+  /* =============== cocina y utilería de la receta =============== */
+  function pot(x, y, s, t, o = {}) {
+    const ctx = C.ctx; ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+    // fueguito
+    for (let i = -2; i <= 2; i++) {
+      const f = Math.sin(t * 12 + i * 2) * 8;
+      shape([[i * 34, -10 + f], [i * 34 + 18, 30], [i * 34 - 18, 30]], i % 2 ? COL.yellow : COL.orange, null);
+    }
+    shape(rect(-120, 28, 240, 18), COL.grey, COL.black, 4);
+    // olla
+    const body = [[-110, -130], [110, -130], [96, 0], [-96, 0]];
+    shape(body, '#5b6472', COL.black, 6);
+    shape(ellipse(0, -130, 118, 26), o.liquid || COL.pink, COL.black, 5);
+    for (let i = 0; i < 3; i++) {
+      const bt = (t * 0.9 + i * 0.33) % 1;
+      shape(ellipse(-50 + i * 50, -134 - bt * 20, 8 + bt * 6, 6 + bt * 4), COL.white, null, 0, { alpha: 0.7 * (1 - bt) });
+    }
+    line([[-110, -110], [-150, -112], [-150, -80], [-104, -78]], COL.black, 8);
+    line([[110, -110], [150, -112], [150, -80], [104, -78]], COL.black, 8);
+    // vapor
+    for (let i = 0; i < 3; i++) {
+      const k = (t * 0.5 + i / 3) % 1;
+      line([[-40 + i * 40 + Math.sin(k * 6 + i) * 14, -170 - k * 120], [-40 + i * 40 + Math.sin(k * 6 + i + 1) * 14, -210 - k * 120]], COL.grey, 5, { alpha: 0.5 * (1 - k) });
+    }
+    if (o.label) C.text(o.label, 0, -48, { size: 40, color: COL.white });
+    if (o.splash > 0 && o.splash < 1) {
+      const k = o.splash;
+      for (let i = 0; i < 8; i++) {
+        const a = -Math.PI + (i / 7) * Math.PI;
+        const r = 60 + k * 130;
+        shape(ellipse(Math.cos(a) * r, -140 + Math.sin(a) * r * 0.9 + k * k * 120, 12, 12), COL.pink, null, 0, { alpha: 1 - k });
+      }
+      C.text('¡plop!', 0, -260 - k * 40, { size: 70, color: COL.red, outline: COL.white, font: C.FONT_TITLE });
+    }
+    if (o.spoon != null) {
+      ctx.save(); ctx.translate(Math.cos(o.spoon) * 50, -140); ctx.rotate(-0.4 + Math.sin(o.spoon) * 0.3);
+      line([[0, 0], [60, -230]], COL.brown, 16);
+      shape(ellipse(0, 6, 22, 30), COL.brown, COL.darkbrown, 4);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+  function oven(x, y, t, o = {}) {
+    const shake = o.shake ? Math.sin(t * 50) * 6 * o.shake : 0;
+    const ctx = C.ctx; ctx.save(); ctx.translate(x + shake, y);
+    shape(rect(-230, -400, 460, 400), COL.silver, COL.black, 7);
+    shape(rect(-230, -400, 460, 80), COL.grey, COL.black, 5);
+    for (let i = 0; i < 4; i++) shape(ellipse(-150 + i * 100, -360, 22, 22), COL.white, COL.black, 4);
+    const glow = o.glow || 0;
+    shape(rect(-170, -290, 340, 230), glow > 0 ? COL.yellow : '#3a3a3a', COL.black, 6, { alpha: 0.6 + glow * 0.4 });
+    line([[-130, -330 + 10], [130, -330 + 10]], COL.black, 8);
+    if (glow > 0) for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4;
+      line([[Math.cos(a) * 260, -175 + Math.sin(a) * 200], [Math.cos(a) * (300 + glow * 40), -175 + Math.sin(a) * (240 + glow * 40)]], COL.yellow, 8);
+    }
+    ctx.restore();
+  }
+  function stork(x, y, t, carrying) {
+    const ctx = C.ctx; ctx.save(); ctx.translate(x, y);
+    const flap = Math.sin(t * 10) * 40;
+    shape([[-20, -10], [-120, -40 - flap], [-60, 10]], COL.white, COL.grey, 4);
+    shape(ellipse(0, 0, 70, 34), COL.white, COL.grey, 4);
+    line([[50, -10], [80, -70]], COL.white, 16);
+    shape(ellipse(88, -80, 22, 20), COL.white, COL.grey, 4);
+    shape(ellipse(94, -84, 4, 4), COL.black);
+    line([[106, -78], [170, -66]], COL.orange, 8);
+    shape([[20, -10], [90, -50 + flap], [40, 10]], COL.white, COL.grey, 4);
+    line([[-10, 30], [-40, 80]], COL.orange, 5); line([[10, 30], [-10, 80]], COL.orange, 5);
+    if (carrying) {
+      line([[150, -64], [150, 20]], COL.grey, 3);
+      shape(ellipse(150, 50, 40, 32), COL.lightpink, COL.pink, 4);
+      shape(ellipse(150, 30, 18, 16), COL.skin, '#b07a4f', 3);
+    }
+    ctx.restore();
+  }
+  function signpost(x, y, str, o = {}) {
+    line([[x, y], [x, y - (o.h || 260)]], COL.darkbrown, 12);
+    const w = C.measure(str, o.size || 46) + 60;
+    const sy = y - (o.h || 260);
+    const ctx = C.ctx; ctx.save(); ctx.translate(x, sy); ctx.rotate(o.rot || 0);
+    shape(rect(-w / 2, -50, w, 90), o.color || COL.orange, COL.darkbrown, 6);
+    C.text(str, 0, 12, { size: o.size || 46, color: o.textColor || COL.darkbrown, font: o.font || C.FONT });
+    ctx.restore();
+  }
+  function bubbleLines(x, y, lines, size = 40, o = {}) {
+    let w = 0; for (const l of lines) w = Math.max(w, C.measure(l, size));
+    w += 60; const lh = size * 1.2, h = lines.length * lh + 34;
+    shape(ellipse(x, y, w / 2 + 10, h / 2 + 10), o.fill || COL.white, COL.black, 4);
+    const tx = o.tail != null ? o.tail : x - 20;
+    line([[tx - 14, y + h / 2 + 4], [tx - 30 + (o.tailDir || 0), y + h / 2 + 46], [tx + 14, y + h / 2 + 2]], COL.black, 4);
+    lines.forEach((l, i) => C.text(l, x, y - h / 2 + 22 + lh * (i + 0.78), { size, color: o.color || COL.black }));
+  }
+  function clothesline(x0, x1, y, t) {
+    line([[x0, y], [(x0 + x1) / 2, y + 30], [x1, y]], COL.grey, 4);
+    const cols = [COL.red, COL.blue, COL.yellow, COL.green, COL.pink];
+    for (let i = 0; i < 5; i++) {
+      const k = (i + 0.5) / 5, cx = x0 + (x1 - x0) * k, cy = y + Math.sin(k * Math.PI) * 30;
+      const sw = Math.sin(t * 3 + i) * 5;
+      if (i % 2) shape([[cx - 30, cy], [cx + 30, cy], [cx + 36 + sw, cy + 70], [cx - 24 + sw, cy + 70]], cols[i], null);
+      else shape([[cx - 34, cy], [cx + 34, cy], [cx + 26 + sw, cy + 46], [cx + 14 + sw, cy + 46], [cx + 10 + sw, cy + 80], [cx - 10 + sw, cy + 80], [cx - 14 + sw, cy + 46], [cx - 26 + sw, cy + 46]], cols[i], null);
+    }
+  }
+  function books(x, y) {
+    shape(rect(x - 40, y - 20, 80, 20), COL.red, COL.darkred, 3);
+    shape(rect(x - 36, y - 40, 74, 20), COL.blue, COL.navy, 3);
+    shape(rect(x - 42, y - 60, 82, 20), COL.green, COL.darkgreen, 3);
+  }
+  function gradCap(x, y, rot = 0) {
+    const ctx = C.ctx; ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    shape([[-80, 0], [0, -34], [80, 0], [0, 34]], COL.black, COL.black, 4);
+    shape(rect(-40, 10, 80, 34), COL.black, null);
+    line([[60, 2], [80, 60]], COL.yellow, 6);
+    shape(ellipse(80, 66, 10, 12), COL.yellow);
+    ctx.restore();
+  }
+  function rain(t, x0, x1, y0, y1, k = 1) {
+    const r = C.mulberry(5);
+    for (let i = 0; i < 40 * k; i++) {
+      const x = x0 + r() * (x1 - x0), sp = 900 + r() * 400, off = r();
+      const y = y0 + ((t * sp / (y1 - y0) + off) % 1) * (y1 - y0);
+      line([[x, y], [x - 8, y + 34]], COL.blue, 4, { alpha: 0.7 });
+    }
+  }
+  function mattress(x, y) {
+    shape(rect(x - 120, y - 40, 240, 40), COL.white, COL.grey, 4);
+    shape(rect(x - 120, y - 40, 150, 40), COL.purple, null, 0, { alpha: 0.8 });
+    shape(ellipse(x + 80, y - 52, 40, 18), COL.white, COL.grey, 3);
+  }
+  function teddy(x, y, rot = 0) {
+    const ctx = C.ctx; ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    shape(ellipse(0, 20, 30, 34), COL.brown, COL.darkbrown, 3);
+    shape(ellipse(0, -26, 24, 22), COL.brown, COL.darkbrown, 3);
+    shape(ellipse(-18, -44, 9, 9), COL.brown, COL.darkbrown, 3);
+    shape(ellipse(18, -44, 9, 9), COL.brown, COL.darkbrown, 3);
+    shape(ellipse(-8, -28, 3, 3), COL.black); shape(ellipse(8, -28, 3, 3), COL.black);
+    ctx.restore();
+  }
+  function table(x0, x1, y) {
+    shape(rect(x0, y, x1 - x0, 26), COL.brown, COL.darkbrown, 5);
+    line([[x0 + 30, y + 26], [x0 + 30, y + 190]], COL.darkbrown, 12);
+    line([[x1 - 30, y + 26], [x1 - 30, y + 190]], COL.darkbrown, 12);
+  }
+  function cookieJar(x, y, open) {
+    shape([[x - 60, y], [x + 60, y], [x + 70, y - 130], [x - 70, y - 130]], COL.sky, COL.navy, 4, { alpha: 0.6 });
+    for (const c of [[-25, -30], [20, -40], [-5, -80], [30, -95]]) shape(ellipse(x + c[0], y + c[1], 24, 22), '#c8873f', COL.darkbrown, 3);
+    if (!open) shape(rect(x - 74, y - 150, 148, 22), COL.red, COL.darkred, 4);
+    C.text('galletas', x, y - 170, { size: 30, color: COL.navy });
+  }
+
+  window.Props = { pot, oven, stork, signpost, bubbleLines, clothesline, books, gradCap, rain, mattress, teddy, cookieJar, table,
+    person, sky, sun, cloud, ground, flower, tree, house, heart, star, balloon, bubble, moto, school, photo, cake, confetti, makeConfetti, shade };
 })();
