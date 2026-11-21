@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Feliz cumpleaños, Dayana</title>
+  <meta name="description" content="Un libro de crayones animado para los 25 años de Dayana.">
+  <meta property="og:title" content="Feliz cumpleaños, Dayana 🎂">
+  <meta property="og:description" content="Un libro de crayones hecho con cariño por tu primo Yadir.">
+  <meta name="theme-color" content="#f3e6c8">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖍️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cabin+Sketch:wght@400;700&family=Gochi+Hand&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="loading">sacando los crayones…</div>
+
+  <main id="book">
+    <canvas id="stage" aria-label="Libro animado de cumpleaños para Dayana"></canvas>
+
+    <div id="ui">
+      <div class="top">
+        <button id="music" class="chip" title="Música">♫</button>
+        <button id="download" class="chip" title="Descargar la película">⬇ video</button>
+      </div>
+
+      <button id="mic" class="chip big">🎤 soplar de verdad</button>
+
+      <div id="end">
+        <button id="again" class="chip big">↺ ver otra vez</button>
+        <button id="download2" class="chip big pink">⬇ descargar la película</button>
+      </div>
+
+      <nav class="bottom">
+        <button id="prev" class="arrow" aria-label="Página anterior">◀</button>
+        <div id="dots"></div>
+        <button id="next" class="arrow" aria-label="Página siguiente">▶</button>
+      </nav>
+    </div>
+  </main>
+
+  <div id="rec" role="dialog" aria-modal="true">
+    <div class="card">
+      <h2>🎬 La película de Dayana</h2>
+      <div id="recprev"></div>
+      <div class="track"><div id="recbar"></div></div>
+      <p id="recmsg"></p>
+      <div class="row">
+        <a id="recdl" class="chip big pink" href="#">⬇ descargar</a>
+        <button id="recclose" class="chip big">cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/content.js"></script>
+  <script src="js/crayon.js"></script>
+  <script src="js/props.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/scenes.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

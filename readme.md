@@ -14,3 +14,30 @@ entonces como podras ver, siempre hemos sido muy unidos, muy cercanos, nos conta
 entonces la idea es que en base a lo anterior me ayudes a proponer ideas geniales e interactivas para poder darle un  detalle virtual que no olvide.
 
 adjunto un carpeta de assets la cual contiene dos fotos, entre ellas, ella en una moto, la cual se ve toda chistosa. 
+---
+
+## 🖍️ El libro de Dayana (lo que se construyó)
+
+Una página animada con estilo de **libro de crayones**: todo se dibuja a mano en un canvas, con líneas que "tiemblan" cuadro a cuadro (12 fps, como la animación hecha a mano), textura de cera y papel.
+
+**Las páginas del libro**
+
+| # | Página | Interacción |
+|---|--------|-------------|
+| 0 | Portada "El libro de Dayana · 25" | toca para abrir (arranca la cajita musical) |
+| 1 | Érase una vez… los tres de niños | toca a cada uno y salta |
+| 2 | El año del cole | toca la campana |
+| 3 | Casa nueva (universidad, buscando arriendo) | toca el letrero "SE ARRIENDA" |
+| 4 | Hoy: la casa de los abuelos y la de Dayana y Tati | toca y viajan corazones |
+| 5 | La motera (su foto en la moto) | toca la moto: ¡brrrum! |
+| 6 | Nosotros (las otras dos fotos) | toca las fotos |
+| 7 | Pastel con velitas 2 y 5 | sopla tocando las velitas, o con el micrófono 🎤 |
+| 8 | Carta final escrita a mano | ver otra vez / descargar la película |
+
+**Descargar el video:** el botón "⬇ video" graba la película completa (~1,5 min, vertical 720×1280, con música) y la descarga. En Chrome/Edge sale en `.mp4`; en otros navegadores puede salir en `.webm`. Hay que dejar la pestaña abierta mientras graba.
+
+**Cambiar textos:** todo lo que se lee está en [`js/content.js`](js/content.js).
+
+**Fotos:** `assets/fotos/` (moto.jpeg, juntos-1.jpeg, juntos-2.jpeg).
+
+**Verla / compartirla:** las fotos y la grabación necesitan que la página se sirva por http (no abriendo el archivo con doble clic). Lo más fácil es GitHub Pages: *Settings → Pages → Deploy from a branch → `main` / root*, y el enlace queda como `https://yadirtf.github.io/happybirthday/`. Para probar en el computador: `python3 -m http.server` dentro de la carpeta y abrir `http://localhost:8000`.
