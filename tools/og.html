@@ -1,0 +1,55 @@
+<!doctype html>
+<!-- Genera assets/og.jpg (la imagen que muestra WhatsApp al compartir el enlace).
+     Abrir con un servidor local, esperar y guardar el canvas. -->
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Cabin+Sketch:wght@400;700&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#222}canvas{display:block}</style></head>
+<body><canvas id="c" width="1200" height="630"></canvas>
+<script src="../js/content.js"></script>
+<script src="../js/crayon.js"></script>
+<script src="../js/props.js"></script>
+<script>
+(async () => {
+  try { await Promise.all([document.fonts.load('60px "Gochi Hand"'), document.fonts.load('60px "Cabin Sketch"')]); } catch (e) {}
+  const C = Crayon, P = Props, COL = C.COL;
+  const cv = document.getElementById('c'), g = cv.getContext('2d');
+  g.drawImage(C.makePaper(1200, 630), 0, 0);
+  C.begin(g, 1);
+  const t = 0.6;
+  // fondo de recetario
+  C.shape(C.rect(-20, -20, 1240, 670), '#f28b5b', null, 0, { gap: 16, alpha: 0.55 });
+  C.line(C.rect(24, 24, 1152, 582), COL.darkbrown, 7);
+  C.line(C.rect(40, 40, 1120, 550), COL.white, 4, { alpha: 0.7 });
+  // textos
+  C.text('Receta secreta', 70, 150, { size: 84, color: COL.cream, outline: COL.darkbrown, font: C.FONT_TITLE, align: 'left' });
+  C.text('cómo se hace una', 76, 228, { size: 52, color: COL.white, outline: COL.darkbrown, outlineW: 7, align: 'left' });
+  C.text('Dayana', 64, 380, { size: 170, color: COL.yellow, outline: COL.darkred, outlineW: 24, font: C.FONT_TITLE, align: 'left' });
+  // chips
+  function chip(x, y, str, fillc, textc) {
+    const w = C.measure(str, 36) + 50;
+    C.shape(C.rect(x, y - 40, w, 60), fillc, COL.darkbrown, 4);
+    C.text(str, x + w / 2, y + 2, { size: 36, color: textc });
+    return w;
+  }
+  let x = 72;
+  x += chip(x, 470, 'edición 25 años', COL.yellow, COL.darkbrown) + 18;
+  chip(x, 470, '14 páginas para tocar', COL.white, COL.darkbrown);
+  C.text('un regalo dibujado con crayones por tu primo Yadir', 74, 560, { size: 34, color: COL.white, outline: COL.darkbrown, outlineW: 6, align: 'left' });
+  // la olla con los tres
+  const as = (o) => Object.assign({ t }, o);
+  P.person(870, 385, 0.5, as({ hair: 'long', hairColor: '#1f1a17', skin: '#d6a06b', shirt: COL.green, pants: COL.navy }));
+  P.person(1080, 385, 0.5, as({ hair: 'short', hairColor: '#1f1a17', skin: '#c98d5b', shirt: COL.red, pants: COL.blue }));
+  P.person(975, 370, 0.54, as({ hair: 'long', hairColor: '#e2b862', skin: '#fbe3cf', shirt: COL.pink, pants: COL.purple, wave: true }));
+  P.pot(975, 540, 1.25, t, {});
+  P.heart(850, 120, 3.4, COL.red);
+  P.heart(1110, 150, 2.6, COL.pink);
+  P.star(1000, 95, 34, COL.yellow);
+  P.star(700, 80, 24, COL.white);
+  // sello
+  g.save(); g.translate(735, 300); g.rotate(-0.25);
+  C.line(C.ellipse(0, 0, 70, 70), COL.red, 7);
+  C.text('25', 0, 26, { size: 76, color: COL.red, font: C.FONT_TITLE });
+  g.restore();
+  document.title = 'listo';
+})();
+</script></body></html>
