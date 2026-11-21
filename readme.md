@@ -46,3 +46,5 @@ La historia se cuenta como una **receta**: en cada página los muñequitos (Daya
 **Fotos:** `assets/fotos/` (moto.jpeg, juntos-1.jpeg, juntos-2.jpeg).
 
 **Verla / compartirla:** las fotos y la grabación necesitan que la página se sirva por http (no abriendo el archivo con doble clic). Lo más fácil es GitHub Pages: *Settings → Pages → Deploy from a branch → `main` / root*, y el enlace queda como `https://yadirtf.github.io/happybirthday/`. Para probar en el computador: `python3 -m http.server` dentro de la carpeta y abrir `http://localhost:8000`.
+
+**Previa al compartir el enlace (WhatsApp):** la imagen es [`assets/og.jpg`](assets/og.jpg) (1200×630). Se dibuja con [`tools/og.html`](tools/og.html) usando los mismos crayones. Las etiquetas `og:` de `index.html` apuntan a `https://happybirthday-dayana.vercel.app`; si cambia el dominio, hay que cambiarlo ahí.
