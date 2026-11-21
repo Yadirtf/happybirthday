@@ -492,8 +492,8 @@
     shape(rect(x - 36, y - 40, 74, 20), COL.blue, COL.navy, 3);
     shape(rect(x - 42, y - 60, 82, 20), COL.green, COL.darkgreen, 3);
   }
-  function gradCap(x, y, rot = 0) {
-    const ctx = C.ctx; ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  function gradCap(x, y, rot = 0, sc = 1) {
+    const ctx = C.ctx; ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(sc, sc);
     shape([[-80, 0], [0, -34], [80, 0], [0, 34]], COL.black, COL.black, 4);
     shape(rect(-40, 10, 80, 34), COL.black, null);
     line([[60, 2], [80, 60]], COL.yellow, 6);
